@@ -40,7 +40,7 @@ export const siteConfig = {
    * URLs that the brief locks down for canonicals, sitemaps, RSS, and OG.
    * Configure NEXT_PUBLIC_SITE_URL when promoting the build to a real host.
    */
-  url: env("NEXT_PUBLIC_SITE_URL", "http://localhost:3000"),
+  url: env("NEXT_PUBLIC_SITE_URL", "https://workflow.fusionsync.ai"),
   /**
    * The hub is editorial. Every "do it for me" CTA points back to the
    * FusionSync AI agency: services, contact, and the call-booking page.

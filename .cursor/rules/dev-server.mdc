@@ -1,0 +1,18 @@
+---
+description: Do not kill or restart the user's running dev servers
+alwaysApply: true
+---
+
+# Dev server handling
+
+The user runs their own dev server (`yarn dev` / `npm run dev`), usually on
+port 3000 in an existing terminal. Do NOT kill, restart, or interfere with it.
+
+- Never run `kill`, `lsof -ti:3000 | xargs kill`, `pkill node`, or similar.
+- Never start a competing dev server on the same port.
+- To verify changes, just `curl` the already-running server (e.g.
+  `curl -s http://localhost:3000/...`). Next.js hot-reloads source edits.
+- A restart is only needed for env/config changes (e.g. `.env.local`,
+  `next.config`). In that case, ASK the user to restart it themselves rather
+  than killing their process.
+- If the server appears down, ask before starting one.
