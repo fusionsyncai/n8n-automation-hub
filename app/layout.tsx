@@ -5,6 +5,7 @@ import { siteConfig } from "@/lib/site-config";
 import { SiteTopBar } from "@/components/site/site-top-bar";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
+import { Analytics } from "@vercel/analytics/next"
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-display",
@@ -128,6 +129,7 @@ export default function RootLayout({
       lang="en"
       className={`${spaceGrotesk.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
+      <Analytics />
       <body className="min-h-screen flex flex-col">
         <SiteJsonLd />
         <SiteTopBar />
