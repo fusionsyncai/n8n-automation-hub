@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig, absoluteUrl } from "@/lib/site-config";
 import { SiteTopBar } from "@/components/site/site-top-bar";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     images: [
       {
-        url: siteConfig.defaultOgImage,
+        url: absoluteUrl(siteConfig.defaultOgImage),
         width: 1200,
         height: 630,
         alt: `${siteConfig.name}: ${siteConfig.tagline}`,
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${siteConfig.name}: ${siteConfig.tagline}`,
     description: siteConfig.description,
-    images: [siteConfig.defaultOgImage],
+    images: [absoluteUrl(siteConfig.defaultOgImage)],
     creator: siteConfig.social.twitter,
   },
   robots: {
