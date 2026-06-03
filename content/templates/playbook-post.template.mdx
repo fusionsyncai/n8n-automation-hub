@@ -1,0 +1,61 @@
+---
+title: "[Problem]: architecture for n8n, [tools]"
+description: "[40-200 chars: what it solves and the stack, no invented stats]"
+slug: "playbook-[topic-kebab]"
+publishedAt: "YYYY-MM-DD"
+author: "n8n-hub-team"
+category: "ai-agents-automation"
+contentType: playbook
+companionSlug: "implement-[topic-kebab]"
+tags: ["n8n", "AI agents"]
+featured: false
+draft: true
+---
+
+## The problem
+
+[Who has this pain and what breaks today.]
+
+## What good looks like
+
+[Outcome in business terms: faster replies, audit trail, no rogue auto-sends.]
+
+## Target architecture
+
+1. [Trigger: form / webhook]
+2. [n8n: normalize + enrich]
+3. [AI: draft first reply]
+4. [Human: Slack approve / changes / reject]
+5. [Tool: send email or message]
+6. [System of record: Google Sheets row per submission]
+
+## Components and why
+
+### n8n
+
+[Orchestration role.]
+
+### AI agent
+
+[What it analyzes, what it must not do without approval.]
+
+### Slack (human-in-the-loop)
+
+[Interactive message pattern.]
+
+### Google Sheets
+
+[Column schema table.]
+
+## Guardrails
+
+[Never auto-send, PII, tone, escalation.]
+
+## Implementation guide
+
+The step-by-step install guide (screenshots, JSON export) lives in the companion implementation post when published.
+
+<Callout variant="tip" title="Implementation guide coming">
+The step-by-step install post ships separately. The post layout adds the playbook CTA
+("Want this built for you?") automatically. Do not add `<CtaBlock />` in playbook MDX.
+</Callout>

@@ -1,0 +1,111 @@
+---
+title: "Five sales process automations you can build in n8n in a weekend"
+description: "Five small, high-leverage n8n workflows that quietly remove busywork from your SDR and AE teams without replacing the CRM you already pay for."
+slug: "five-sales-automations-in-n8n"
+publishedAt: "2026-06-01"
+updatedAt: "2026-06-01"
+author: "n8n-hub-team"
+category: "sales-process-automation"
+tags: ["n8n", "sales", "HubSpot", "CRM", "Pipedrive"]
+featured: false
+draft: false
+---
+
+The sales process is mostly busywork dressed up in a CRM. Most of it can be removed with five small n8n workflows that no one will notice are running, which is the highest praise you can give an automation.
+
+None of these replace your CRM. They sit next to it and quietly do the work no one wants to do.
+
+## 1. Inbound lead enrichment before it hits the CRM
+
+The mistake most teams make is enriching inside the CRM (HubSpot, Pipedrive, Salesforce, Attio). Slow, expensive, and you cannot deduplicate cleanly because the lead is already in the system.
+
+The better pattern:
+
+1. Webhook receives the form submission (`HTTP Trigger` node).
+2. `If` node checks for an obvious spam pattern (free-mail domain + role-y title + low-quality message length).
+3. Enrich via Clearbit, Apollo, or whatever provider you prefer (`HTTP Request` node, or the dedicated node if available).
+4. Score the lead with a simple rules engine in a `Code` node. ICP fit, company size, geography, intent signal.
+5. Only then `Upsert` into the CRM with the enriched fields and the score already populated.
+
+Two benefits: your CRM stays clean, and your AE sees a lead that already has the context they would have alt-tabbed three times to find.
+
+<Callout variant="tip" title="Skip the enrichment for known accounts">
+Add a `lookup` step before enrichment. If the domain already exists as an Account in the CRM, route around the enrichment cost. You will be surprised how often this fires.
+</Callout>
+
+## 2. Round-robin assignment, but smarter than your CRM does it
+
+Most CRM round-robins are dumb. They cycle through a list and assign whoever is next. They do not check:
+
+- Who is out of office today.
+- Who is at capacity.
+- Who specializes in the segment the lead came from.
+
+The n8n version:
+
+1. `Schedule Trigger` or `Webhook` fires when a new qualified lead lands.
+2. Pull the AE list from a Google Sheet (or Notion, or Airtable; pick whatever your ops lead actually keeps current).
+3. Filter out anyone with `OOO == TRUE` for today.
+4. Filter out anyone whose `current_load` exceeds their cap.
+5. Filter by `segment_specialty` matching the lead&apos;s segment.
+6. Pick the AE with the lowest current load.
+7. Assign in CRM, post in Slack (&ldquo;@alex you got the lead from Acme&rdquo;), and increment `current_load` in the sheet.
+
+It is ten nodes and you have built a smarter dispatcher than most CRMs ship.
+
+## 3. Stale-deal nudges into Slack, not email
+
+Email-based deal reminders are noise. They land in the same inbox as every other CRM notification and get deleted on autopilot.
+
+A Slack nudge into the deal owner&apos;s DM with the deal name, last activity date, and a one-click link to update the stage works far better.
+
+1. `Schedule Trigger` runs daily at 9am.
+2. Query the CRM for deals where `last_activity_date < (today - 7 days) AND stage IN ('Proposal Sent', 'Negotiation')`.
+3. Loop over the result set.
+4. Look up the deal owner&apos;s Slack ID in a `User` sheet.
+5. Post a Slack DM with a polite nudge and a deep-link into the CRM record.
+
+Result: deals stop falling through cracks, your AE looks competent in front of the customer, and no one has to send the awkward &ldquo;hey just checking in&rdquo; reminder.
+
+## 4. AE-to-CS handoff with a real handover doc
+
+Most handovers from sales to customer success are a single Slack message: &ldquo;new customer, account X, here is the call recording.&rdquo; Two months later CS is asking sales the same question for the third time.
+
+A real handover doc, generated automatically:
+
+1. `Webhook` fires when a deal moves to `Closed Won`.
+2. Pull every note, email, and call summary attached to the deal record.
+3. Pass the bundle to an LLM (`OpenAI` or `Anthropic` node) with a prompt that produces a structured handover: goals, success criteria, key stakeholders, known risks, agreed timeline.
+4. Create a Notion page (or Coda doc, or Confluence) with the structured summary.
+5. Add the CSM and AE to the page. Post the link in the dedicated handover channel.
+
+Same five minutes of AE time become a permanent artefact the entire CS org can read.
+
+<InlineCta />
+
+## 5. Quote-to-cash plumbing that does not lose the PO
+
+This one is the most boring and the highest leverage.
+
+When a deal closes, the PO needs to go somewhere, the invoice needs to be generated, the customer record needs to exist in the billing system, and finance needs to be told.
+
+In most companies that is four manual steps and a Slack thread. In n8n:
+
+1. CRM webhook: `deal stage == 'Closed Won'`.
+2. Create or update the customer in your billing system (Stripe, Recurly, Chargebee).
+3. Generate the invoice from the deal&apos;s line items.
+4. File the PO PDF into a known Google Drive folder named `purchase-orders/{year}/{customer}`.
+5. Post a summary into a `#new-customers` Slack channel for finance and ops.
+6. Tag the deal in the CRM with the invoice number for audit traceability.
+
+Step 6 is the one most teams skip. Skip it and three months from now you cannot answer &ldquo;which deal did this invoice come from?&rdquo; without forensic work.
+
+## What &ldquo;good&rdquo; looks like
+
+If you run these five workflows for two months, you will notice three things.
+
+- Your AEs stop complaining about the CRM.
+- Your CS team stops re-asking the same onboarding questions.
+- Your CFO stops sending you that monthly Slack about the missing PO.
+
+That is the bar. Each one is a workflow you could build in a weekend. None of them are clever. All of them buy back time your team currently spends on things they hate.

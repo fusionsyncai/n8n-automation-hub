@@ -1,0 +1,208 @@
+---
+title: "AI form replies with human-in-the-loop: architecture for n8n, Slack, and Google Sheets"
+description: "Design a form-to-reply pipeline in n8n: capture submissions, draft with an AI agent, route Slack approvals, send email only after sign-off, and track every row in Google Sheets."
+slug: "playbook-ai-form-replies-human-in-the-loop-slack"
+publishedAt: "2026-06-03"
+updatedAt: "2026-06-03"
+author: "n8n-hub-team"
+category: "ai-agents-automation"
+contentType: playbook
+companionSlug: "implement-ai-form-replies-human-in-the-loop"
+tags:
+  [
+    "n8n",
+    "AI agents",
+    "human-in-the-loop",
+    "Slack",
+    "Google Sheets",
+    "forms",
+    "email",
+    "sales",
+  ]
+featured: true
+draft: false
+---
+
+Inbound form submissions are easy to collect. They are much harder to **answer well** at speed without sending something you will regret.
+
+The pattern teams ask for looks like this:
+
+1. A prospect fills out a form (website, Typeform, Tally, native n8n form, etc.).
+2. n8n captures the submission and normalizes the payload.
+3. An **AI agent** analyzes context and drafts a **first reply** (usually email, sometimes another channel).
+4. A human reviews the draft in **Slack**: approve, request changes, or reject.
+5. Only after approval does the workflow call a **send tool** (Gmail, Outlook, SendGrid, etc.).
+6. **Google Sheets** is the system of record: one row per submission, status, draft text, reviewer, timestamps, and send outcome.
+
+This playbook is the **architecture** for that automation. The companion **implementation guide** (step-by-step, screenshots, importable workflow JSON) is published separately as `implement-ai-form-replies-human-in-the-loop` when the build assets are ready.
+
+## The problem
+
+Most teams sit in one of two bad places:
+
+- **Manual replies**: someone copies the form into a doc, writes a reply, sends it. Quality is high, speed is low, nothing is auditable at scale.
+- **Fully automated replies**: an LLM fires email the second the form lands. Speed is high, quality is inconsistent, and one hallucinated promise in an outbound email is an incident.
+
+What you want is **speed with a gate**: AI does the first pass, humans keep authority over what leaves the building, and operations can see every state in a sheet the whole company already understands.
+
+## What good looks like
+
+After this workflow is live:
+
+- Every submission gets a **structured row** in Google Sheets within seconds.
+- The team sees a **Slack message** with summary, risk flags, and the proposed reply (not a wall of JSON).
+- Nothing customer-facing sends until a human taps **Approve** (or edits, then approves).
+- Rejected or "needs changes" items stay in the sheet with a clear status so nothing falls through a DM thread.
+- You can report on volume, approval time, and rejection reasons without exporting from five tools.
+
+## Target architecture
+
+<WorkflowDiagram caption="Form to reply, with a human approval gate before anything sends.">
+  <WorkflowStep node="Form provider" detail="Website, Typeform, Tally, or native n8n form submission." />
+  <WorkflowStep node="n8n" via="webhook / trigger" detail="Normalize fields, enrich, write the first sheet row (status: received)." />
+  <WorkflowStep node="AI agent" detail="Analyze the submission, draft a first reply, update the row (status: draft_ready)." />
+  <WorkflowStep node="Slack" detail="Post an interactive review: approve, request changes, or reject." />
+  <WorkflowStep node="n8n" via="human action" detail="Branch on the decision. Optional re-draft loop. Run the send tool only on approve." />
+  <WorkflowOutput>Email / messaging API (send on approve only)</WorkflowOutput>
+  <WorkflowOutput>Google Sheets: status log (sent, rejected, needs_changes, failed)</WorkflowOutput>
+</WorkflowDiagram>
+
+Split this into **at least two n8n workflows** in production:
+
+1. **Ingest + draft** (triggered by form): fast path, no Slack buttons yet.
+2. **Review + send** (triggered by Slack interactivity or a sub-workflow): handles human decisions and side effects.
+
+Keeping review logic separate stops a single giant workflow from becoming unmaintainable when Slack payload shapes change.
+
+## Components and why
+
+### Form capture (trigger)
+
+Use whatever your site already runs. Common choices:
+
+| Source | n8n entry |
+|--------|-----------|
+| Native n8n Form Trigger | Built-in, good for prototypes |
+| Typeform / Tally / Jotform | Webhook trigger |
+| Webflow / Framer / custom site | Generic Webhook node |
+
+Normalize early with a **Set** or **Code** node so downstream steps always see the same field names: `email`, `name`, `company`, `message`, `source`, `submitted_at`.
+
+### n8n orchestration
+
+n8n is the **state machine**, not the brain. It should:
+
+- Validate required fields (do not LLM-analyze an empty email).
+- Write and update the Google Sheets row at each milestone.
+- Call the AI agent with a **tight system prompt** and structured output (JSON schema or a fixed set of fields).
+- Post to Slack with **Block Kit** and interactive buttons.
+- Execute the send node only on the approved branch.
+
+<Callout variant="warning" title="Never wire Send Email directly off the AI node">
+The most common production mistake is a single straight line: Form → AI → Gmail. One bad token in the model output and you have a customer-facing mistake with no audit trail. The Slack gate is not optional for this use case.
+</Callout>
+
+### AI agent (analysis + first reply)
+
+Treat the agent as a **drafter**, not an autonomous sender. Give it:
+
+- The normalized form fields.
+- Optional enrichment you trust (CRM account tier, past tickets) if you have it.
+- Brand voice rules (length, tone, what not to promise).
+- Output fields such as: `summary`, `intent`, `risk_flags[]`, `proposed_subject`, `proposed_body`, `confidence`.
+
+Run evaluation on real historical submissions before go-live. Keep temperature low for outbound copy.
+
+### Slack (human-in-the-loop)
+
+Post a channel message (or DM a queue owner) with:
+
+- One-line summary and intent.
+- Risk flags (pricing question, legal, angry tone).
+- Collapsible or threaded draft body.
+- Buttons: **Approve**, **Request changes**, **Reject**.
+
+**Approve** should pass the sheet row id and the approved text hash so n8n can verify nothing changed between click and send.
+
+**Request changes** should open a modal or thread prompt for edit notes, set sheet status to `needs_changes`, and optionally re-invoke the agent with the notes.
+
+**Reject** sets status to `rejected` and stops the send branch. No email leaves.
+
+Use Slack interactivity URL pointing at an n8n **Webhook** node. Verify Slack signing secret on every callback.
+
+### Send tool (post-approval only)
+
+On approve:
+
+1. Re-read the sheet row (source of truth for final body).
+2. Send via Gmail / Microsoft Outlook / SendGrid / etc.
+3. Update sheet: `status=sent`, `sent_at`, `sent_by_slack_user`, `provider_message_id` if available.
+
+On failure, set `status=send_failed` and alert a different Slack channel so ops can retry manually.
+
+### Google Sheets (system of record)
+
+Sheets wins here because ops teams already live there, filters are free, and you get a cheap audit log without standing up a database on day one.
+
+Suggested columns:
+
+| Column | Purpose |
+|--------|---------|
+| `submission_id` | Stable id (UUID from n8n) |
+| `received_at` | ISO timestamp |
+| `form_source` | Which form or campaign |
+| `contact_email` | Reply-to |
+| `contact_name` | Display name |
+| `company` | Optional |
+| `raw_payload` | JSON string for debugging |
+| `ai_summary` | Short internal summary |
+| `ai_intent` | e.g. pricing, support, partnership |
+| `risk_flags` | Comma-separated or JSON |
+| `draft_subject` | Proposed email subject |
+| `draft_body` | Proposed email body |
+| `status` | received · draft_ready · pending_review · needs_changes · approved · rejected · sent · send_failed |
+| `reviewer_slack_id` | Who approved or rejected |
+| `reviewed_at` | Timestamp |
+| `revision_notes` | From request changes flow |
+| `sent_at` | When email actually sent |
+| `error_message` | Last failure reason |
+
+Lock the sheet tab permissions. n8n service account edits rows; humans do not hand-edit `draft_body` in production unless you explicitly allow it.
+
+## Status machine (sheet + Slack)
+
+Keep statuses boring and enumerable:
+
+1. `received`: row created, AI not finished.
+2. `draft_ready`: AI output written, Slack message posted (`pending_review`).
+3. `needs_changes`: human asked for edits; optional re-draft loop.
+4. `approved`: human approved; send branch running.
+5. `rejected`: closed, no send.
+6. `sent`: provider accepted the message.
+7. `send_failed`: requires ops follow-up.
+
+Every transition should be triggered by n8n, not manual sheet edits, or you will lose sync with Slack button state.
+
+## Guardrails
+
+- **PII**: minimize what you post in public Slack channels; use a private `#inbound-review` channel or DMs.
+- **Idempotency**: form providers retry webhooks. Dedupe on `submission_id` or provider event id before creating a second row.
+- **Rate limits**: batch Slack updates; do not post ten messages per field.
+- **Prompt injection**: form message body is untrusted input. Instruct the model to treat it as data, not instructions.
+- **Compliance**: if you are in regulated industries, log who approved what and keep the sheet as audit evidence.
+
+## When a deterministic workflow beats an agent
+
+Not every field needs an LLM. If the form only has "Schedule a demo" with four known answers, use a template node and skip the agent. Reserve the agent for free-text messages where intent actually varies.
+
+## Implementation guide (next)
+
+The installable post will cover:
+
+- Exact n8n nodes and credential setup.
+- Slack app scopes and interactivity URL.
+- Sheet template + column mapping in n8n.
+- Screenshot walkthrough of each branch.
+- Exportable workflow JSON to import into your instance.
+
+Planned slug: **`implement-ai-form-replies-human-in-the-loop`**. Set `companionSlug` on both posts so readers can jump between architecture and build.

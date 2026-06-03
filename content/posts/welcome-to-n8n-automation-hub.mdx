@@ -1,0 +1,89 @@
+---
+title: "Welcome to n8n Automation Hub: what we write about and why"
+description: "An editorial hub for the people doing real work in n8n. Eight pillars, opinionated takes, copy-pasteable templates, and zero ten-hacks-to-automate-everything energy."
+slug: "welcome-to-n8n-automation-hub"
+publishedAt: "2026-06-02"
+updatedAt: "2026-06-02"
+author: "n8n-hub-team"
+category: "business-process-automation"
+tags: ["n8n", "welcome", "philosophy"]
+featured: false
+draft: false
+---
+
+Most automation writing on the internet falls into one of two buckets.
+
+Bucket one is the marketing-flavoured listicle. &ldquo;10 automations that will change your business&rdquo;, with screenshots of the happy path and zero discussion of what breaks. Bucket two is the dense docs page that tells you which node exists but never tells you when to use it.
+
+We thought there was room for a third thing.
+
+## What the hub is
+
+**n8n Automation Hub** is where teams find **workflow implementations** they can install in their business, plus **playbooks** that explain the architecture before (or after) the build.
+
+### Two content types
+
+1. **Implementations** (primary): what the workflow does, step-by-step setup, screenshots, importable n8n JSON, and a CTA if you want FusionSync AI to deploy it for you.
+2. **Playbooks** (secondary): research, tools, human-in-the-loop patterns, sheet schemas, and tradeoffs. Often published first; the implementation guide follows with real install details.
+
+For a flagship example, start with the playbook on [AI form replies with Slack approval](/posts/playbook-ai-form-replies-human-in-the-loop-slack). The matching implementation post ships when the workflow export and screenshots are ready.
+
+Concretely:
+
+- **Real workflows**, not slideware. If a flow has an OAuth quirk, we say so. If a node lies about its rate limit, we say so.
+- **Copy-pasteable templates** wherever they make sense. Import the JSON, swap your credentials, run it.
+- **Opinionated takes**. Sometimes a workflow is the wrong answer and you should write a tiny service instead. We will say so.
+- **No invented numbers**. We do not claim &ldquo;customers see 47% more revenue&rdquo; unless we can point at the data.
+
+The voice is short, practical, and pre-coffee honest. Editorial standards and agent instructions live in `content/CONTENT-STRATEGY.md`.
+
+## The eight pillars
+
+Every post lives under exactly one of these categories. We picked eight that cover the surface area of the work without getting cute.
+
+1. **Business process automation**: the spreadsheets, approvals, onboarding, and back-office workflows that should have been replaced years ago.
+2. **Sales process automation**: CRM, lead capture, scoring, follow-ups, deal-stage routing, and the reporting your SDR keeps redoing manually.
+3. **Slack automation**: alerts, approvals, digests, and channel routing without standing up a custom Slack app.
+4. **Productivity tools automation**: Notion, Airtable, Google Workspace, Linear, Asana, ClickUp, and the connective tissue between them.
+5. **Telegram automation**: bots, channels, customer messaging, and command-driven workflows in n8n.
+6. **WhatsApp and Meta automation**: WhatsApp Business Cloud API, Instagram messaging, ad lead routing, and the Meta marketing surface.
+7. **Blog and SEO automation**: content pipelines, internal-linking suggestions, indexing checks, Search Console reporting, and the SEO grunt work.
+8. **AI agents and LLM automation**: tool-using agents, retrieval-augmented generation, evaluation, and graceful human hand-off.
+
+<Callout variant="tip" title="If you only remember one thing">
+A good workflow is the smallest change that makes a real problem disappear forever. Most automations fail because the author tried to automate the wrong layer.
+</Callout>
+
+## Why n8n specifically
+
+We are not religious about tools. We have shipped Zapier, Make, Pipedream, Temporal, AWS Step Functions, and a lot of plain Node.js code. We keep coming back to n8n for a small handful of reasons.
+
+- **It is open source and self-hostable**, so you do not pay per execution at scale.
+- **The node ecosystem is broad** without being unmaintainable. New integrations land regularly. Most popular APIs have a first-class node.
+- **JavaScript and Python execution** live inside the same workflow, so you are never one step away from needing a real codebase.
+- **The expression syntax is sane**. You can read someone else&apos;s workflow and understand it in 30 seconds.
+- **AI nodes are first class**, not bolted on as an afterthought. LangChain-style chains, vector stores, agent loops; all native.
+
+That last point matters. The new wave of automation is not &ldquo;move data from A to B&rdquo;. It is &ldquo;move data from A to B, but have an LLM make a judgement call in the middle, and escalate to a human when it is unsure.&rdquo; n8n handles that natively in 2026 better than anyone else we have tried.
+
+<InlineCta />
+
+## Who runs the hub
+
+The hub is published by [FusionSync AI](https://fusionsync.ai), an automation and AI agency. We build n8n workflows and AI agents for product, ops, sales, and marketing teams. The hub exists because we kept writing the same internal docs and figured we may as well publish them.
+
+If you want one of these automations built for you (or you want us to fix the n8n flow your old contractor left behind), that is what FusionSync AI does. Same team, same opinions.
+
+## What you can expect
+
+A new post or template once or twice a week. Sometimes both. Cross-posted to RSS at [/feed.xml](/feed.xml) and the newsletter for the once-a-month digest.
+
+Some posts will be 500-word opinions. Some will be 3,000-word teardowns of a real (anonymized) workflow we shipped for a client. A few will be opinionated comparisons: when to use n8n vs Temporal, when to reach for an LLM vs a deterministic flow, when to keep using Zapier (yes, occasionally).
+
+You can browse by [category](/categories), follow [tags](/tags), or just read everything chronologically on the homepage.
+
+## A small disclaimer
+
+n8n is a registered trademark of n8n GmbH. n8n Automation Hub is an independent editorial project published by FusionSync AI and is not affiliated with, endorsed by, or sponsored by n8n GmbH. All product names, logos, and brands are property of their respective owners.
+
+Glad you are here. Start with the [categories](/categories) page, pick a pillar that matches your day job, and steal whatever is useful.

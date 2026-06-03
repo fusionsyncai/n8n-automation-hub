@@ -1,0 +1,31 @@
+---
+description: Read the content strategy SOP before creating or editing blog posts
+globs: content/posts/**/*.mdx,content/templates/**/*.mdx
+alwaysApply: false
+---
+
+# Blog post creation SOP
+
+Before creating or substantially editing any post under `content/posts/`,
+**read `content/CONTENT-STRATEGY.md`** and follow it. It is the source of truth.
+
+Key points (full detail in the SOP):
+
+- Two content types via `contentType` frontmatter:
+  - `implementation` (primary): installable workflow guide. Overview, prerequisites,
+    step-by-step setup aligned to screenshots, workflow JSON export, operations, CTA.
+  - `playbook` (secondary): architecture and research. Problem, target architecture,
+    components, human-in-the-loop, data model, guardrails.
+- Pair related posts with `companionSlug` on both (playbook <-> implementation).
+- Usual order: ship the playbook first, then the implementation guide.
+- Start from `content/templates/playbook-post.template.mdx` or
+  `content/templates/implementation-post.template.mdx`.
+- Validate frontmatter against `lib/content/schema.ts` (title 8-120, description 40-200,
+  kebab-case slug, one of the eight categories in `lib/content/categories.ts`).
+- Every CTA points to `siteConfig.agency.bookCallUrl` (Cal.com).
+- Do not add `<CtaBlock />` in post MDX. The post layout picks the CTA from `contentType`:
+  `implementation` → "Need help setting this up?"; `playbook` → "Want this built for you?".
+- For architecture diagrams use the `<WorkflowDiagram />` MDX component, never ASCII art.
+- No em dashes or en dashes. No invented stats (use `TODO(stat)`). Brand casing:
+  "n8n Automation Hub" and "FusionSync AI".
+- Run `npm run check:rules` and `npm run typecheck` before considering a post done.
