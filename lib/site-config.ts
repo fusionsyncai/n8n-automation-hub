@@ -37,10 +37,15 @@ export const siteConfig = {
     tagline: "AI agency building automations and AI agents end-to-end.",
   },
   /**
-   * URLs that the brief locks down for canonicals, sitemaps, RSS, and OG.
-   * Configure NEXT_PUBLIC_SITE_URL when promoting the build to a real host.
+   * Canonical base URL for canonicals, sitemaps, RSS, OG, and JSON-LD.
+   *
+   * The hub is served as a subfolder of the main site at
+   * `www.fusionsync.ai/workflow` (reverse-proxied from the agency app). Every
+   * public URL must point at the subfolder so Google ranks it there and never
+   * the bare `workflow.fusionsync.ai` subdomain. Matches `basePath` in
+   * next.config.ts. Override with NEXT_PUBLIC_SITE_URL per environment.
    */
-  url: env("NEXT_PUBLIC_SITE_URL", "https://workflow.fusionsync.ai"),
+  url: env("NEXT_PUBLIC_SITE_URL", "https://www.fusionsync.ai/workflow"),
   /**
    * The hub is editorial. Every "do it for me" CTA points back to the
    * FusionSync AI agency: services, contact, and the call-booking page.
