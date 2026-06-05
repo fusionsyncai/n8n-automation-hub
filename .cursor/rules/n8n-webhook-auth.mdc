@@ -1,0 +1,33 @@
+---
+description: Always secure n8n Webhook nodes with Header Auth
+alwaysApply: true
+---
+
+# n8n Webhook authentication
+
+Whenever creating an n8n Webhook node, it MUST use Header Auth.
+
+- Set `parameters.authentication: "headerAuth"` on the Webhook node.
+- Attach an `httpHeaderAuth` credential via the node's `credentials` field, e.g.
+
+```json
+{
+  "parameters": { "authentication": "headerAuth", "httpMethod": "POST", "path": "..." },
+  "credentials": {
+    "httpHeaderAuth": { "id": "<credentialId>", "name": "<credentialName>" }
+  }
+}
+```
+
+## Reusing existing credentials
+
+- The n8n public API does NOT allow listing/reading credentials
+  (`n8n_manage_credentials` with `action: "list"` returns `Forbidden`).
+  Only `create`, `delete`, and `getSchema` work.
+- Known credential IDs are tracked in `n8n/n8n-credential.md`.
+- BEFORE creating any Webhook node, ASK the user whether to reuse an existing
+  credential listed in `n8n/n8n-credential.md` or provide a new one.
+- When the user provides a new credential ID, append it to
+  `n8n/n8n-credential.md`.
+- Only create a new `httpHeaderAuth` credential when the user confirms none
+  exists. Schema fields: `name` (header name) and `value` (header value).

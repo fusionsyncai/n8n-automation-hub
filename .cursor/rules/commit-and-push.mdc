@@ -1,0 +1,18 @@
+---
+description: Commit and push workflow for the development branch
+alwaysApply: true
+---
+
+# Commit And Push
+
+When the user asks to "take a pull" from development, run exactly:
+
+```bash
+git pull origin development
+```
+
+- Do not add rebase, autostash, or other behavior-changing flags.
+- Safe read-only/dry-run flags are acceptable when explicitly useful.
+- For commit-and-push requests, commit all relevant current changes and push to
+  `development` unless the user specifies a different branch.
+- Do not use destructive git commands unless the user explicitly requests them.
