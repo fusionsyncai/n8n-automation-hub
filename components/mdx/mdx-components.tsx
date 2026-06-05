@@ -10,6 +10,7 @@ import {
   WorkflowOutput,
   WorkflowStep,
 } from "@/components/mdx/workflow-diagram";
+import { WorkflowDownload } from "@/components/mdx/workflow-download";
 
 /**
  * Components passed to <MDXRemote />: both element overrides (h2, a, img, ...)
@@ -222,4 +223,5 @@ export const mdxComponents = {
   WorkflowDiagram,
   WorkflowStep,
   WorkflowOutput,
+  WorkflowDownload,
 };

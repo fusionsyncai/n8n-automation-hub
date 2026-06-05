@@ -1,0 +1,2554 @@
+{
+  "active": true,
+  "activeVersion": {
+    "updatedAt": "2026-03-12T11:49:36.459Z",
+    "createdAt": "2026-03-12T11:49:36.459Z",
+    "versionId": "6d217522-e0e5-4945-beeb-cf2910975a16",
+    "workflowId": "1vww9vvO60iiiH5l",
+    "nodes": [
+      {
+        "parameters": {
+          "content": "## Posting the linkedIn Post",
+          "height": 283.6513688464229,
+          "width": 1297.2604790419164,
+          "color": 7
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          -976,
+          -512
+        ],
+        "id": "83120e09-88de-44e4-ad20-b38aa53a3f45",
+        "name": "Sticky Note1"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "d5140bae-771a-459b-ab61-c0be978d184b",
+                "leftValue": "={{ $json.fields.Status }}",
+                "rightValue": "Approved",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "f20e15f2-4bb2-4dbe-91cb-926cfe4d84cb",
+        "name": "Status = Approved1",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [
+          -592,
+          -432
+        ]
+      },
+      {
+        "parameters": {
+          "content": "## LinkedIn Post Draft Creation",
+          "height": 872,
+          "width": 3207,
+          "color": 7
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          -1648,
+          32
+        ],
+        "id": "69ada909-e3fe-486a-9b71-a90402f04b4c",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "everyMinute"
+              }
+            ]
+          },
+          "authentication": "airtableTokenApi",
+          "baseId": {
+            "__rl": true,
+            "value": "appdSSojsWulC0r5T",
+            "mode": "id"
+          },
+          "tableId": {
+            "__rl": true,
+            "value": "tblrHJZJwCRJlP3t2",
+            "mode": "id"
+          },
+          "triggerField": "MODIFIED",
+          "downloadAttachments": true,
+          "downloadFieldNames": "Image",
+          "additionalFields": {}
+        },
+        "id": "24ec374e-37a9-4ee1-89b7-a1aab79962c2",
+        "name": "Posting trigger",
+        "type": "n8n-nodes-base.airtableTrigger",
+        "typeVersion": 1,
+        "position": [
+          -848,
+          -432
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "oTc0wLVNOLfjKs2R",
+            "name": "Harsh "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "create",
+          "base": {
+            "__rl": true,
+            "value": "appdSSojsWulC0r5T",
+            "mode": "list",
+            "cachedResultName": "Linkedin Post Automation",
+            "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T"
+          },
+          "table": {
+            "__rl": true,
+            "value": "tblrHJZJwCRJlP3t2",
+            "mode": "list",
+            "cachedResultName": "LinkedIn Posts",
+            "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T/tblrHJZJwCRJlP3t2"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Idea": "={{ $('Topic Research Agent').first().json.output.Idea }}",
+              "Discription": "={{ $('Topic Research Agent').first().json.output.Description }}",
+              "Significance": "={{ $('Topic Research Agent').first().json.output.Significance }}",
+              "Implications": "={{ $('Topic Research Agent').first().json.output.Significance }}",
+              "LinkedIn Post": "={{ $('Merge').first().json.output }}",
+              "Status": "Ready For Review",
+              "Image Discription": "={{ $json.output }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Idea",
+                "displayName": "Idea",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Discription",
+                "displayName": "Discription",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Implications",
+                "displayName": "Implications",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Significance",
+                "displayName": "Significance",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "LinkedIn Post",
+                "displayName": "LinkedIn Post",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Image Discription",
+                "displayName": "Image Discription",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Image",
+                "displayName": "Image",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "options",
+                "options": [
+                  {
+                    "name": "Decline",
+                    "value": "Decline"
+                  },
+                  {
+                    "name": "Ready For Review",
+                    "value": "Ready For Review"
+                  },
+                  {
+                    "name": "Posted",
+                    "value": "Posted"
+                  },
+                  {
+                    "name": "Approved",
+                    "value": "Approved"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "CREATED",
+                "displayName": "CREATED",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": true,
+                "removed": true
+              },
+              {
+                "id": "MODIFIED",
+                "displayName": "MODIFIED",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "c14bd100-ebd3-44b1-a337-a4061db018df",
+        "name": "Create Record1",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.1,
+        "position": [
+          816,
+          304
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "oTc0wLVNOLfjKs2R",
+            "name": "Harsh "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.0-flash",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          -1248,
+          432
+        ],
+        "id": "2fb5de25-6c19-425e-b145-45d377be9dac",
+        "name": "Google Gemini Chat Model1",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "oH5qhdC4wA4tRFZ8",
+            "name": "SK - Gemini "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {
+            "prompt": "Instructions:\n--------------\n{instructions}\n--------------\nCompletion:\n--------------\n{completion}\n--------------\n\nAbove, the Completion did not satisfy the constraints given in the Instructions.\nError:\n--------------\n{error}\n--------------\n\nPlease try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+        "typeVersion": 1,
+        "position": [
+          -1008,
+          368
+        ],
+        "id": "513844db-1f90-4026-aa77-a400d6d96801",
+        "name": "Auto-fixing Output Parser"
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n\"Idea\": \"\",\n\"Description\": \"\",\n\"Significance\": \"\",\n\"Implementation\": \"\"\n}"
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.2,
+        "position": [
+          -864,
+          592
+        ],
+        "id": "f3c033f7-ef63-4c64-b6cc-10743617c183",
+        "name": "Structured Output Parser"
+      },
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "everyMinute"
+              }
+            ]
+          },
+          "authentication": "airtableTokenApi",
+          "baseId": {
+            "__rl": true,
+            "value": "appdSSojsWulC0r5T",
+            "mode": "id"
+          },
+          "tableId": {
+            "__rl": true,
+            "value": "tblvAjfdiwjEdqrYJ",
+            "mode": "id"
+          },
+          "triggerField": "MODIFIED",
+          "additionalFields": {}
+        },
+        "id": "ea24d8ee-4c95-43bb-bcde-56bacb6c7021",
+        "name": "Airtable Trigger1",
+        "type": "n8n-nodes-base.airtableTrigger",
+        "typeVersion": 1,
+        "position": [
+          -1568,
+          144
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "oTc0wLVNOLfjKs2R",
+            "name": "Harsh "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "function getRandomNumber() {\n    const randomNum = Math.floor(Math.random() * 2) + 1;\n    \n    // Return in n8n expected format\n    return [{\n        json: {\n            randomNumber: randomNum\n        }\n    }];\n}\n\n// Execute the function\nreturn getRandomNumber();"
+        },
+        "id": "cd265fed-bd8f-4ace-a861-097174252c84",
+        "name": "Code1",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -848,
+          144
+        ]
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.randomNumber }}",
+                      "rightValue": 1,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                }
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "6ac6e4ae-8818-48a6-8084-3b11e891c322",
+                      "leftValue": "={{ $json.randomNumber }}",
+                      "rightValue": 2,
+                      "operator": {
+                        "type": "number",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                }
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "dcf11531-6c48-4654-ae18-e584c782f1f8",
+        "name": "Switch1",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -656,
+          144
+        ]
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.0-flash",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          -400,
+          720
+        ],
+        "id": "f5f4a4f0-7ffb-42f1-8d75-8737f868ac03",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "oH5qhdC4wA4tRFZ8",
+            "name": "SK - Gemini "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "description": "We are generating Content for linkedin post. so make sure that agent give output is required format. If something is missing or looking something off you have to retry."
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolThink",
+        "typeVersion": 1.1,
+        "position": [
+          -1120,
+          560
+        ],
+        "id": "7efa2688-1bd1-42f2-89d2-bcad90480236",
+        "name": "Think"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "value": "appdSSojsWulC0r5T",
+            "mode": "list",
+            "cachedResultName": "Linkedin Post Automation",
+            "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T"
+          },
+          "table": {
+            "__rl": true,
+            "value": "tblvAjfdiwjEdqrYJ",
+            "mode": "list",
+            "cachedResultName": "Topics",
+            "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T/tblvAjfdiwjEdqrYJ"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "id": "={{ $('Airtable Trigger1').first().json.id }}",
+              "Status": "Researched"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [
+              {
+                "id": "id",
+                "displayName": "id",
+                "required": false,
+                "defaultMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": true,
+                "removed": false
+              },
+              {
+                "id": "Topics",
+                "displayName": "Topics",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Discription",
+                "displayName": "Discription",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "options",
+                "options": [
+                  {
+                    "name": "Decline",
+                    "value": "Decline"
+                  },
+                  {
+                    "name": "Approved",
+                    "value": "Approved"
+                  },
+                  {
+                    "name": "Researched",
+                    "value": "Researched"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "MODIFIED",
+                "displayName": "MODIFIED",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "ecae9914-38fe-489f-8967-7dd3d319b03a",
+        "name": "Update record1",
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.1,
+        "position": [
+          1040,
+          304
+        ],
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "oTc0wLVNOLfjKs2R",
+            "name": "Harsh "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          -352,
+          320
+        ],
+        "id": "961e5165-2f26-4cc5-8230-57dcc1d00633",
+        "name": "Google Gemini Chat Model3",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "oH5qhdC4wA4tRFZ8",
+            "name": "SK - Gemini "
+          }
+        }
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          144,
+          304
+        ],
+        "id": "453d2cdd-1f01-47e6-a7fe-a74a0f4ba6d1",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.0-flash",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          352,
+          576
+        ],
+        "id": "02f327c9-7ebe-44b8-9b25-0ffb358d0ec2",
+        "name": "Google Gemini Chat Model4",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "oH5qhdC4wA4tRFZ8",
+            "name": "SK - Gemini "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "base": {
+            "__rl": true,
+            "value": "appq20Jq9VZUtDxif",
+            "mode": "list",
+            "cachedResultName": "LinkedIn Post Automation",
+            "cachedResultUrl": "https://airtable.com/appq20Jq9VZUtDxif"
+          },
+          "table": {
+            "__rl": true,
+            "value": "tblaOfFTjUqG9pufR",
+            "mode": "list",
+            "cachedResultName": "LinkedIn Posts",
+            "cachedResultUrl": "https://airtable.com/appq20Jq9VZUtDxif/tblaOfFTjUqG9pufR"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Status": "Posted",
+              "id": "={{ $('Posting trigger').item.json.id }}"
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [
+              {
+                "id": "id",
+                "displayName": "id",
+                "required": false,
+                "defaultMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": true,
+                "removed": false
+              },
+              {
+                "id": "Idea",
+                "displayName": "Idea",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Discription",
+                "displayName": "Discription",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Implications",
+                "displayName": "Implications",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Significance",
+                "displayName": "Significance",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "LinkedIn Post",
+                "displayName": "LinkedIn Post",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Image",
+                "displayName": "Image",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "options",
+                "options": [
+                  {
+                    "name": "Decline",
+                    "value": "Decline"
+                  },
+                  {
+                    "name": "Ready For Review",
+                    "value": "Ready For Review"
+                  },
+                  {
+                    "name": "Posted",
+                    "value": "Posted"
+                  },
+                  {
+                    "name": "Approved",
+                    "value": "Approved"
+                  }
+                ],
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "CREATED",
+                "displayName": "CREATED",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": true,
+                "removed": true
+              },
+              {
+                "id": "MODIFIED",
+                "displayName": "MODIFIED",
+                "required": false,
+                "defaultMatch": false,
+                "canBeUsedToMatch": true,
+                "display": true,
+                "type": "string",
+                "readOnly": true,
+                "removed": true
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.airtable",
+        "typeVersion": 2.1,
+        "position": [
+          16,
+          -432
+        ],
+        "id": "dc957841-5c86-4a55-8761-a408083b968a",
+        "name": "Update record",
+        "credentials": {
+          "airtableTokenApi": {
+            "id": "oTc0wLVNOLfjKs2R",
+            "name": "Harsh "
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "d5140bae-771a-459b-ab61-c0be978d184b",
+                "leftValue": "={{ $json.fields.Status }}",
+                "rightValue": "Approved",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "57fc4209-7c73-400d-bc7f-3230956914b3",
+        "name": "Status = Approved",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2.2,
+        "position": [
+          -1392,
+          144
+        ]
+      },
+      {
+        "parameters": {
+          "postAs": "organization",
+          "organization": "219415801",
+          "text": "={{ $json.fields['LinkedIn Post'] }}",
+          "shareMediaCategory": "IMAGE",
+          "binaryPropertyName": "Image_0",
+          "additionalFields": {}
+        },
+        "id": "c8094873-7102-419e-ba88-fe41c3f44ef3",
+        "name": "Post on LinkedIn",
+        "type": "n8n-nodes-base.linkedIn",
+        "typeVersion": 1,
+        "position": [
+          -320,
+          -432
+        ],
+        "credentials": {
+          "linkedInOAuth2Api": {
+            "id": "B0wnbTn0bZitoAVz",
+            "name": "LinkedIn FusionSyncAI Page"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+        "typeVersion": 1,
+        "position": [
+          -992,
+          624
+        ],
+        "id": "0814d1b9-9fcb-4bd2-991d-7fea25ce91fa",
+        "name": "Search Tool",
+        "credentials": {
+          "serpApi": {
+            "id": "NhRi5f0DeOmQF2ae",
+            "name": "Harsh"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Topic - {{ $('Airtable Trigger1').item.json.fields.Topics }}\n\nDescription - {{ $('Airtable Trigger1').item.json.fields.Discription }}                                                                   \nAs an ai Assistant, your task is to identify current-impactful topics and trend in AI Automation Industry. focus on issues that are relevant to both experienced and beginner in AI Automation Fields.\n\nAnd Always use Think tool and Search Tool ",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "=As an ai Assistant, your task is to identify current-impactful topics and trend in AI Automation Industry. focus on issues that are relevant to both experienced and beginner in AI Automation Fields.\n\nTopic - {{ $('Airtable Trigger1').item.json.fields.Topics }}\n\nDescription - {{ $('Airtable Trigger1').item.json.fields.Discription }}\n\n- Create a brief overview of the Topic.\n- Why it is significant or how it is impacting the Industry.\n- Any relevant statistics, expert opinion or case study.\n- Potential implementation for professionals in the field.\n\nPresent one thoroughly researched topic ensuring it is current, relevant and likely to spark interest among LinkedIn professionals in AI Automation fields.\n\n*** Ensure that the topics are not redundant with each other.\n\nAlways use Search Tool to find out recent information about the topic.\n\nExample:\n\n{\n\"Idea\": \"\",\n\"Description\": \"\",\n\"Significance\": \"\",\n\"Implementation\": \"\"\n}",
+            "maxIterations": 10
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.1,
+        "position": [
+          -1216,
+          144
+        ],
+        "id": "c9cb6005-de20-47dd-bae3-4f2e5238a8a6",
+        "name": "Topic Research Agent"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=This is the Inputs that you have to use to create an very good linkedin post. \n\nIdea: {{ $('Topic Research Agent').item.json.output.Idea }}\nDescription: {{ $('Topic Research Agent').item.json.output.Description }}\nSignificance: {{ $('Topic Research Agent').item.json.output.Significance }}\nImplications: {{ $('Topic Research Agent').item.json.output.Implementation }}",
+          "options": {
+            "systemMessage": "You Are an Expert LinkedIn Post writter. ANd your task is to create linkeIn post according to following inputs from research Assistant.\n\nAlways use serpAPI to geather information to create linkedin Post\n\nMake sure that the writing style is really natural and does not include any AI jargon like \"here is the silver lining\", \"In today's fast world\" etc. Make sure to use human-like tone while writing.\n\n***Start with strong conviction statement.\n\nRemember these key characteristics:\n\n1. A casual, conversational style mixed with industry-specific terminology\n2. Frequent use of personal anecdotes and experiences\n3. Strong emphasis through capitalization and punctuation\n4. A passionate and authentic tone when discussing your field or interests\n5. Open discussion of challenges and difficulties\n6. Support and encouragement for other community members\n7. Focus on personal growth, project development, and community dynamics\n8. Always maintain proper spacing between paras and lines.\n*** Do not include a title, just the post copy \n*** Never include PAS sections headers (Problem-agitate-solution)\n-------\n\nNote :- Always use emojies and visual elements in the post.\n      - Do not write Big para's keep it short and simple.\n      - Always use proper spacing and line break.\n\n\n###Example post\n{\n\"linkedIn_Post\": \"What if AI could handle the routine tasks while your team focuses on the big ideas? That's the power of Agentic AI!💡\n\n\nImagine a world where your team has AI agents working alongside them, taking care of repetitive tasks and boosting productivity. This is the reality of Agentic AI, transforming how we work with technology. \n\n\nWe all want seamless, personalized experiences, whether it's with products or brands. Generative AI has already made great strides in this area, understanding our needs and delivering tailored solutions. But Agentic AI takes it to a whole new level. 🚀 \n\n\nAt FusionSyncAI, we believe technology should empower people. That’s why we’re pushing the boundaries of AI—creating intelligent agents to handle routine tasks, freeing up human potential for strategic and meaningful work. \n\n\n✨   Here’s why Agentic AI is so powerful: \n\n\n➡️  Amplifies human potential: With AI agents managing tasks, your employees can focus on complex projects with ease ✨. \n\n\n➡️  Custom solutions for your business: The Now Assist Skill Kit lets you tailor AI agents to fit your company’s needs, creating workflows that streamline operations. \n\n\n➡️  You stay in control: Built with governance and analytics, Agentic AI ensures you have full control over your AI agents \n\n\nAt FusionSyncAI, we're excited to help your business unlock the power of Agentic AI, transforming productivity and delivering tailored solutions for your team. 🚀\n\nhashtag#AI hashtag#agenticAI hashtag#customerexperience hashtag#automation hashtag#productivity\"\n\n\n}\n\n-------\n### Example Output:\n{\n\"LinkedIn Post\": \"Actual Post\"\n}\n\n\n***Always give use the same writing style and tone as Example Post.\n\n***Always use Google Serch tool which is connected to you to gether Infomation for Linkedin Post\n\n***Always use we as we are posting these post on FusionSyncAI Company Page. Do not use single person like \"I\""
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.1,
+        "position": [
+          -320,
+          128
+        ],
+        "id": "65fd0cf8-ebd6-42fe-9a82-69645bccfec0",
+        "name": "Point of View Post Creation"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=This is the Inputs that you have to use to create an very good linkedin post. \n\nIdea: {{ $('Topic Research Agent').item.json.output.Idea }}\nDescription: {{ $('Topic Research Agent').item.json.output.Description }}\nSignificance: {{ $('Topic Research Agent').item.json.output.Significance }}\nImplications: {{ $('Topic Research Agent').item.json.output.Implementation }}",
+          "options": {
+            "systemMessage": "=Role:\nYou are an expert LinkedIn Content Strategist and Copywriter with deep expertise in the Problem-Agitate-Solution (PAS) framework and viral LinkedIn post creation.\n\nTask:\nCreate an engaging LinkedIn post using the PAS framework based on the provided title and description, optimized for maximum engagement and conversion.\n\nContext:\nThe Problem-Agitate-Solution (PAS) framework is a powerful copywriting technique that can be used to create engaging LinkedIn posts. Here is the structure of the PAS framework:\n●\nProblem: Start by identifying a problem that your target audience is facing. This could be anything from a lack of leads to a low conversion rate. State the problem clearly and concisely in a way that your audience will relate to.\n●\nAgitate: Once you've identified the problem, you need to agitate it. This means making your audience feel the pain of the problem. You can do this by highlighting the negative consequences of the problem, or by sharing stories of people who have struggled with it.\n●\nSolution: Finally, you need to offer a solution to the problem. This is where you pitch your product or service as the answer to your audience's prayers. Explain how your solution works and why it's the best option available.\nHere are some tips for using the PAS framework on LinkedIn:\n●\nBe specific: The more specific you can be about the problem, the more your audience will relate to it.\n●\nUse strong language: Don't be afraid to use strong language to agitate the problem.\n●\nBack up your claims: Use data, case studies, and testimonials to support your claims about your solution.\n●\nInclude a call to action: Tell your audience what you want them to do next, whether it's visiting your website, downloading a lead magnet, or booking a call.\n\n\nCompany details:\nAbout FusionSyncAI:\nFusionSyncAI is a leading AI-driven sales automation agency serving clients in the USA, Canada, Israel, and globally. The company is recognized for its agile, personal approach, Top Rated Plus status on Upwork, and over 30+ successful client engagements with consistent 5-star reviews. Our mission is to maximize sales productivity and efficiency through tailored, results-oriented automation solutions.\n\nFusionSyncAI AI Sales System Core Context:\n\nProprietary omni-channel AI Agent for lead qualification, nurturing, and booking meetings automatically\n\nIntelligent communications hub supporting voice, SMS, email, WhatsApp, and more\n\nAutomated voice campaigns, appointment reminders, and smart follow-up to ensure no leads slip through the cracks\n\nDelivers 40% more leads, 35% higher conversions, and saves 25+ hours per week per sales rep\n\nAchieves up to 90% faster response times, 95% reduction in scheduling conflicts, and 80% higher engagement versus traditional methods\n\nRecallSync Product Context:\nRecallSync is FusionSyncAI's signature sales enablement platform—transforming outbound efforts with personalized, multi-channel outreach sequences, one-click calendar scheduling, and prospect nurturing powered by AI. Built to help agencies and B2B teams automate sales pipelines, increase follow-up velocity, and convert more deals than ever before.\n\nSpecifics:\nYour LinkedIn post will include the following sections:\n\nProblem Section:\n- Identify a clear, specific problem from the provided title/description\n- Make it relatable to the target audience\n- Use concise, impactful language\n- Include relevant statistics or social proof if applicable\n\nAgitate Section:\n- Emphasize the pain points\n- List 2-3 negative consequences\n- Use emotional triggers\n- Create urgency without being pushy\n- Include real-world examples or scenarios\n\nSolution Section:\n- Present a clear, actionable solution\n- Break down the solution into 3-5 steps\n- Include specific benefits\n- Back claims with data or examples\n- Add credibility elements\n\nPost Format Requirements:\n- Use short, scannable paragraphs\n- Include strategic line breaks\n- Add relevant emojis (2-3 max per section)\n- Include bullet points or numbered lists\n- End with a clear call-to-action\n- Add 3-5 relevant hashtags\n\nInput Parameters:\n- Idea : {The main topic or focus}\n- Description: {Detailed context about the topic}\n- significance: {importance of the topic}\n- Implcations: { what will ne the implications }\n\nOutput Format:\nThe post should follow LinkedIn's best practices:\n- Hook in first 2-3 lines\n- Total length: 1300-1500 characters\n- Professional tone\n- Engaging storytelling elements\n- Strategic use of white space\n\nExample Output Structure:\n\n[Attention-grabbing hook]\n\n[Problem statement]\n\n[List of pain points]\n\n[Agitation points with examples]\n\n[Solution introduction]\n\n[Step-by-step solution breakdown]\n\n[Benefits/Results]\n\n[Call-to-action]\n\n[Hashtags]\n\n\nHere is an Post Example :- \n\n```🏠 Real Estate's Silent Revolution: Are You Ready to Let AI Handle Your Client Calls? 🤖\n\n🔍  In real-estate business speedy client communication is crucial. Yet, Answering hundreds of inquiries can be overwhelming even for seasoned professionals.\n\nDid you know that most of potential buyers lose interest due to delayed responses?📉 \n\n👥 Imagine losing a big deal simply because you couldn’t respond in time. Frustrated clients can hit your reputation hard, leading to fewer referrals. Missed opportunities due to mishandled inquiries can add up to a significant dip in your revenue. The stress of monitoring calls andemails, atop handling existing transactions, can severely hinder your ability to thrive in an ever more competitive market.\n\n💡AI Sales Systems to the Rescue:🌟 \nStep 1:Simple Integration – Begin by incorporating AI into your customer service workflows. These systems can handle basic inquiries 24/7, ensuring no call goes unanswered.🔄 \nStep 2: Enhanced Efficiency – Automate appointment bookings and follow-ups. AI can manage schedules seamlessly, freeing up your time for more critical tasks.📈 \nStep 3: Data-Driven Insights – Gain valuable insights from AI analytics to tailor your approach, improving customer satisfaction and increasing closing rates.🙌 \n\nBenefits:\n- Faster response times translate to happier clients.\n- Increased productivity allows you to focus on high-stakes negotiations.\n- Streamlined operations reduce costs and enhance profitability.🎯 \n\nWant to learn more about how AI can skyrocket your real estate business? Dive into our full guide on system integration and practical benefits today! DM us today!\n\n#RealEstateInnovation #ProductivityBooster```\n\nNotes:\n- Ensure each post follows LinkedIn's content guidelines\n- Focus on providing actionable value\n- Use data and specific examples when possible\n- Maintain a professional yet conversational tone\n- Include engagement triggers throughout the post\n- Give proper formated and structred posts without any markdown.\n- Do not use AI Jagrons and make sure that post should look line that it is written by an proffesional more specificaly an human.\n\nImportant:-Make sure that the writing style is really natural and does not include any AI jargon like \"here is the silver lining\", \"In today's fast world\" etc. Make sure to use human-like tone while writing."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.1,
+        "position": [
+          -304,
+          512
+        ],
+        "id": "118f0b94-5186-467b-a6a1-24f01638f9a6",
+        "name": "AI Agent for PAS post Creation"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=here is the linkedin Post - {{ $json.output }}",
+          "options": {
+            "systemMessage": "Role:\nYou are an expert AI Image Description Specialist who converts LinkedIn post concepts into clear, precise image descriptions.\n\nTask:\nCreate a concise, detailed image description that captures the post's core message in a visually compelling way.\n\nContext:\nThe description should be specific enough for AI image generation while maintaining professional LinkedIn standards.\n\nSpecifics:\nProvide the description in this exact format:\n\nMAIN SCENE:\n[One clear sentence describing the primary visual setup]\n\nKEY ELEMENTS:\n1. Subject: [Primary focus/person/object]\n2. Action: [What the subject is doing]\n3. Setting: [Immediate environment]\n4. Props: [2-3 relevant objects]\n\nSTYLE:\n- Visual Style: [e.g., professional photography, modern illustration]\n- Colors: [2-3 specific colors]\n- Lighting: [One specific lighting style]\n- Angle: [One specific viewing angle]\n\nAVOID:\n[3 specific elements to exclude]\n\nExample Output:\n\nMAIN SCENE:\nA professional businesswoman presenting data on a holographic display in a modern, minimalist office.\n\nKEY ELEMENTS:\n1. Subject: Female executive in business attire\n2. Action: Gesturing towards floating data visualization\n3. Setting: Clean, modern office space\n4. Props: Holographic display, glass desk, smart device\n\nSTYLE:\n- Visual Style: Corporate photography\n- Colors: Navy blue, silver, soft white\n- Lighting: Bright natural lighting\n- Angle: Three-quarter view\n\nAVOID:\n- Cluttered backgrounds\n- Casual clothing\n- Do Not create highly futureestic images"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.1,
+        "position": [
+          352,
+          304
+        ],
+        "id": "5719dfad-e4b0-4718-ba37-e4a27c06b5c2",
+        "name": "Image Description"
+      }
+    ],
+    "connections": {
+      "Status = Approved1": {
+        "main": [
+          [
+            {
+              "node": "Post on LinkedIn",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Posting trigger": {
+        "main": [
+          [
+            {
+              "node": "Status = Approved1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Record1": {
+        "main": [
+          [
+            {
+              "node": "Update record1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Auto-fixing Output Parser",
+              "type": "ai_languageModel",
+              "index": 0
+            },
+            {
+              "node": "Topic Research Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Auto-fixing Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Topic Research Agent",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Auto-fixing Output Parser",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Airtable Trigger1": {
+        "main": [
+          [
+            {
+              "node": "Status = Approved",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code1": {
+        "main": [
+          [
+            {
+              "node": "Switch1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch1": {
+        "main": [
+          [
+            {
+              "node": "Point of View Post Creation",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "AI Agent for PAS post Creation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent for PAS post Creation",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Think": {
+        "ai_tool": [
+          [
+            {
+              "node": "Topic Research Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model3": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Point of View Post Creation",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Image Description",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model4": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Image Description",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Status = Approved": {
+        "main": [
+          [
+            {
+              "node": "Topic Research Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Post on LinkedIn": {
+        "main": [
+          [
+            {
+              "node": "Update record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Search Tool": {
+        "ai_tool": [
+          [
+            {
+              "node": "Topic Research Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Topic Research Agent": {
+        "main": [
+          [
+            {
+              "node": "Code1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Point of View Post Creation": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent for PAS post Creation": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Image Description": {
+        "main": [
+          [
+            {
+              "node": "Create Record1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "system migration",
+    "name": null,
+    "description": null,
+    "autosaved": false
+  },
+  "activeVersionId": "6d217522-e0e5-4945-beeb-cf2910975a16",
+  "connections": {
+    "Status = Approved1": {
+      "main": [
+        [
+          {
+            "node": "Post on LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Posting trigger": {
+      "main": [
+        [
+          {
+            "node": "Status = Approved1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Record1": {
+      "main": [
+        [
+          {
+            "node": "Update record1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Topic Research Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Topic Research Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Status = Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Point of View Post Creation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent for PAS post Creation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent for PAS post Creation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Topic Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Point of View Post Creation",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Image Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image Description",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Status = Approved": {
+      "main": [
+        [
+          {
+            "node": "Topic Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post on LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Update record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Topic Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Topic Research Agent": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Point of View Post Creation": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent for PAS post Creation": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Image Description": {
+      "main": [
+        [
+          {
+            "node": "Create Record1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-09-03T16:31:02.410Z",
+  "id": "1vww9vvO60iiiH5l",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "LinkedIn - Post Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Posting the linkedIn Post",
+        "height": 283.6513688464229,
+        "width": 1297.2604790419164,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        -512
+      ],
+      "id": "83120e09-88de-44e4-ad20-b38aa53a3f45",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d5140bae-771a-459b-ab61-c0be978d184b",
+              "leftValue": "={{ $json.fields.Status }}",
+              "rightValue": "Approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f20e15f2-4bb2-4dbe-91cb-926cfe4d84cb",
+      "name": "Status = Approved1",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -592,
+        -432
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## LinkedIn Post Draft Creation",
+        "height": 872,
+        "width": 3207,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        32
+      ],
+      "id": "69ada909-e3fe-486a-9b71-a90402f04b4c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "appdSSojsWulC0r5T",
+          "mode": "id"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "tblrHJZJwCRJlP3t2",
+          "mode": "id"
+        },
+        "triggerField": "MODIFIED",
+        "downloadAttachments": true,
+        "downloadFieldNames": "Image",
+        "additionalFields": {}
+      },
+      "id": "24ec374e-37a9-4ee1-89b7-a1aab79962c2",
+      "name": "Posting trigger",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        -432
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "oTc0wLVNOLfjKs2R",
+          "name": "Harsh "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appdSSojsWulC0r5T",
+          "mode": "list",
+          "cachedResultName": "Linkedin Post Automation",
+          "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblrHJZJwCRJlP3t2",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Posts",
+          "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T/tblrHJZJwCRJlP3t2"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Idea": "={{ $('Topic Research Agent').first().json.output.Idea }}",
+            "Discription": "={{ $('Topic Research Agent').first().json.output.Description }}",
+            "Significance": "={{ $('Topic Research Agent').first().json.output.Significance }}",
+            "Implications": "={{ $('Topic Research Agent').first().json.output.Significance }}",
+            "LinkedIn Post": "={{ $('Merge').first().json.output }}",
+            "Status": "Ready For Review",
+            "Image Discription": "={{ $json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Idea",
+              "displayName": "Idea",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Discription",
+              "displayName": "Discription",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Implications",
+              "displayName": "Implications",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Significance",
+              "displayName": "Significance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "LinkedIn Post",
+              "displayName": "LinkedIn Post",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Image Discription",
+              "displayName": "Image Discription",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Image",
+              "displayName": "Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Decline",
+                  "value": "Decline"
+                },
+                {
+                  "name": "Ready For Review",
+                  "value": "Ready For Review"
+                },
+                {
+                  "name": "Posted",
+                  "value": "Posted"
+                },
+                {
+                  "name": "Approved",
+                  "value": "Approved"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CREATED",
+              "displayName": "CREATED",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "MODIFIED",
+              "displayName": "MODIFIED",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c14bd100-ebd3-44b1-a337-a4061db018df",
+      "name": "Create Record1",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "oTc0wLVNOLfjKs2R",
+          "name": "Harsh "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1248,
+        432
+      ],
+      "id": "2fb5de25-6c19-425e-b145-45d377be9dac",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "oH5qhdC4wA4tRFZ8",
+          "name": "SK - Gemini "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "prompt": "Instructions:\n--------------\n{instructions}\n--------------\nCompletion:\n--------------\n{completion}\n--------------\n\nAbove, the Completion did not satisfy the constraints given in the Instructions.\nError:\n--------------\n{error}\n--------------\n\nPlease try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        368
+      ],
+      "id": "513844db-1f90-4026-aa77-a400d6d96801",
+      "name": "Auto-fixing Output Parser"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"Idea\": \"\",\n\"Description\": \"\",\n\"Significance\": \"\",\n\"Implementation\": \"\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -864,
+        592
+      ],
+      "id": "f3c033f7-ef63-4c64-b6cc-10743617c183",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "appdSSojsWulC0r5T",
+          "mode": "id"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "tblvAjfdiwjEdqrYJ",
+          "mode": "id"
+        },
+        "triggerField": "MODIFIED",
+        "additionalFields": {}
+      },
+      "id": "ea24d8ee-4c95-43bb-bcde-56bacb6c7021",
+      "name": "Airtable Trigger1",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        144
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "oTc0wLVNOLfjKs2R",
+          "name": "Harsh "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function getRandomNumber() {\n    const randomNum = Math.floor(Math.random() * 2) + 1;\n    \n    // Return in n8n expected format\n    return [{\n        json: {\n            randomNumber: randomNum\n        }\n    }];\n}\n\n// Execute the function\nreturn getRandomNumber();"
+      },
+      "id": "cd265fed-bd8f-4ace-a861-097174252c84",
+      "name": "Code1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.randomNumber }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6ac6e4ae-8818-48a6-8084-3b11e891c322",
+                    "leftValue": "={{ $json.randomNumber }}",
+                    "rightValue": 2,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dcf11531-6c48-4654-ae18-e584c782f1f8",
+      "name": "Switch1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -656,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        720
+      ],
+      "id": "f5f4a4f0-7ffb-42f1-8d75-8737f868ac03",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "oH5qhdC4wA4tRFZ8",
+          "name": "SK - Gemini "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "We are generating Content for linkedin post. so make sure that agent give output is required format. If something is missing or looking something off you have to retry."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        -1120,
+        560
+      ],
+      "id": "7efa2688-1bd1-42f2-89d2-bcad90480236",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appdSSojsWulC0r5T",
+          "mode": "list",
+          "cachedResultName": "Linkedin Post Automation",
+          "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblvAjfdiwjEdqrYJ",
+          "mode": "list",
+          "cachedResultName": "Topics",
+          "cachedResultUrl": "https://airtable.com/appdSSojsWulC0r5T/tblvAjfdiwjEdqrYJ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Airtable Trigger1').first().json.id }}",
+            "Status": "Researched"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Topics",
+              "displayName": "Topics",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Discription",
+              "displayName": "Discription",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Decline",
+                  "value": "Decline"
+                },
+                {
+                  "name": "Approved",
+                  "value": "Approved"
+                },
+                {
+                  "name": "Researched",
+                  "value": "Researched"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "MODIFIED",
+              "displayName": "MODIFIED",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ecae9914-38fe-489f-8967-7dd3d319b03a",
+      "name": "Update record1",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        304
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "oTc0wLVNOLfjKs2R",
+          "name": "Harsh "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        320
+      ],
+      "id": "961e5165-2f26-4cc5-8230-57dcc1d00633",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "oH5qhdC4wA4tRFZ8",
+          "name": "SK - Gemini "
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        144,
+        304
+      ],
+      "id": "453d2cdd-1f01-47e6-a7fe-a74a0f4ba6d1",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        576
+      ],
+      "id": "02f327c9-7ebe-44b8-9b25-0ffb358d0ec2",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "oH5qhdC4wA4tRFZ8",
+          "name": "SK - Gemini "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appq20Jq9VZUtDxif",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Post Automation",
+          "cachedResultUrl": "https://airtable.com/appq20Jq9VZUtDxif"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblaOfFTjUqG9pufR",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Posts",
+          "cachedResultUrl": "https://airtable.com/appq20Jq9VZUtDxif/tblaOfFTjUqG9pufR"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Posted",
+            "id": "={{ $('Posting trigger').item.json.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Idea",
+              "displayName": "Idea",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Discription",
+              "displayName": "Discription",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Implications",
+              "displayName": "Implications",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Significance",
+              "displayName": "Significance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "LinkedIn Post",
+              "displayName": "LinkedIn Post",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Image",
+              "displayName": "Image",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Decline",
+                  "value": "Decline"
+                },
+                {
+                  "name": "Ready For Review",
+                  "value": "Ready For Review"
+                },
+                {
+                  "name": "Posted",
+                  "value": "Posted"
+                },
+                {
+                  "name": "Approved",
+                  "value": "Approved"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CREATED",
+              "displayName": "CREATED",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "MODIFIED",
+              "displayName": "MODIFIED",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        -432
+      ],
+      "id": "dc957841-5c86-4a55-8761-a408083b968a",
+      "name": "Update record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "oTc0wLVNOLfjKs2R",
+          "name": "Harsh "
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d5140bae-771a-459b-ab61-c0be978d184b",
+              "leftValue": "={{ $json.fields.Status }}",
+              "rightValue": "Approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "57fc4209-7c73-400d-bc7f-3230956914b3",
+      "name": "Status = Approved",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -1392,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "postAs": "organization",
+        "organization": "219415801",
+        "text": "={{ $json.fields['LinkedIn Post'] }}",
+        "shareMediaCategory": "IMAGE",
+        "binaryPropertyName": "Image_0",
+        "additionalFields": {}
+      },
+      "id": "c8094873-7102-419e-ba88-fe41c3f44ef3",
+      "name": "Post on LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -432
+      ],
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "B0wnbTn0bZitoAVz",
+          "name": "LinkedIn FusionSyncAI Page"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -992,
+        624
+      ],
+      "id": "0814d1b9-9fcb-4bd2-991d-7fea25ce91fa",
+      "name": "Search Tool",
+      "credentials": {
+        "serpApi": {
+          "id": "NhRi5f0DeOmQF2ae",
+          "name": "Harsh"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic - {{ $('Airtable Trigger1').item.json.fields.Topics }}\n\nDescription - {{ $('Airtable Trigger1').item.json.fields.Discription }}                                                                   \nAs an ai Assistant, your task is to identify current-impactful topics and trend in AI Automation Industry. focus on issues that are relevant to both experienced and beginner in AI Automation Fields.\n\nAnd Always use Think tool and Search Tool ",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=As an ai Assistant, your task is to identify current-impactful topics and trend in AI Automation Industry. focus on issues that are relevant to both experienced and beginner in AI Automation Fields.\n\nTopic - {{ $('Airtable Trigger1').item.json.fields.Topics }}\n\nDescription - {{ $('Airtable Trigger1').item.json.fields.Discription }}\n\n- Create a brief overview of the Topic.\n- Why it is significant or how it is impacting the Industry.\n- Any relevant statistics, expert opinion or case study.\n- Potential implementation for professionals in the field.\n\nPresent one thoroughly researched topic ensuring it is current, relevant and likely to spark interest among LinkedIn professionals in AI Automation fields.\n\n*** Ensure that the topics are not redundant with each other.\n\nAlways use Search Tool to find out recent information about the topic.\n\nExample:\n\n{\n\"Idea\": \"\",\n\"Description\": \"\",\n\"Significance\": \"\",\n\"Implementation\": \"\"\n}",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -1216,
+        144
+      ],
+      "id": "c9cb6005-de20-47dd-bae3-4f2e5238a8a6",
+      "name": "Topic Research Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=This is the Inputs that you have to use to create an very good linkedin post. \n\nIdea: {{ $('Topic Research Agent').item.json.output.Idea }}\nDescription: {{ $('Topic Research Agent').item.json.output.Description }}\nSignificance: {{ $('Topic Research Agent').item.json.output.Significance }}\nImplications: {{ $('Topic Research Agent').item.json.output.Implementation }}",
+        "options": {
+          "systemMessage": "You Are an Expert LinkedIn Post writter. ANd your task is to create linkeIn post according to following inputs from research Assistant.\n\nAlways use serpAPI to geather information to create linkedin Post\n\nMake sure that the writing style is really natural and does not include any AI jargon like \"here is the silver lining\", \"In today's fast world\" etc. Make sure to use human-like tone while writing.\n\n***Start with strong conviction statement.\n\nRemember these key characteristics:\n\n1. A casual, conversational style mixed with industry-specific terminology\n2. Frequent use of personal anecdotes and experiences\n3. Strong emphasis through capitalization and punctuation\n4. A passionate and authentic tone when discussing your field or interests\n5. Open discussion of challenges and difficulties\n6. Support and encouragement for other community members\n7. Focus on personal growth, project development, and community dynamics\n8. Always maintain proper spacing between paras and lines.\n*** Do not include a title, just the post copy \n*** Never include PAS sections headers (Problem-agitate-solution)\n-------\n\nNote :- Always use emojies and visual elements in the post.\n      - Do not write Big para's keep it short and simple.\n      - Always use proper spacing and line break.\n\n\n###Example post\n{\n\"linkedIn_Post\": \"What if AI could handle the routine tasks while your team focuses on the big ideas? That's the power of Agentic AI!💡\n\n\nImagine a world where your team has AI agents working alongside them, taking care of repetitive tasks and boosting productivity. This is the reality of Agentic AI, transforming how we work with technology. \n\n\nWe all want seamless, personalized experiences, whether it's with products or brands. Generative AI has already made great strides in this area, understanding our needs and delivering tailored solutions. But Agentic AI takes it to a whole new level. 🚀 \n\n\nAt FusionSyncAI, we believe technology should empower people. That’s why we’re pushing the boundaries of AI—creating intelligent agents to handle routine tasks, freeing up human potential for strategic and meaningful work. \n\n\n✨   Here’s why Agentic AI is so powerful: \n\n\n➡️  Amplifies human potential: With AI agents managing tasks, your employees can focus on complex projects with ease ✨. \n\n\n➡️  Custom solutions for your business: The Now Assist Skill Kit lets you tailor AI agents to fit your company’s needs, creating workflows that streamline operations. \n\n\n➡️  You stay in control: Built with governance and analytics, Agentic AI ensures you have full control over your AI agents \n\n\nAt FusionSyncAI, we're excited to help your business unlock the power of Agentic AI, transforming productivity and delivering tailored solutions for your team. 🚀\n\nhashtag#AI hashtag#agenticAI hashtag#customerexperience hashtag#automation hashtag#productivity\"\n\n\n}\n\n-------\n### Example Output:\n{\n\"LinkedIn Post\": \"Actual Post\"\n}\n\n\n***Always give use the same writing style and tone as Example Post.\n\n***Always use Google Serch tool which is connected to you to gether Infomation for Linkedin Post\n\n***Always use we as we are posting these post on FusionSyncAI Company Page. Do not use single person like \"I\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        128
+      ],
+      "id": "65fd0cf8-ebd6-42fe-9a82-69645bccfec0",
+      "name": "Point of View Post Creation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=This is the Inputs that you have to use to create an very good linkedin post. \n\nIdea: {{ $('Topic Research Agent').item.json.output.Idea }}\nDescription: {{ $('Topic Research Agent').item.json.output.Description }}\nSignificance: {{ $('Topic Research Agent').item.json.output.Significance }}\nImplications: {{ $('Topic Research Agent').item.json.output.Implementation }}",
+        "options": {
+          "systemMessage": "=Role:\nYou are an expert LinkedIn Content Strategist and Copywriter with deep expertise in the Problem-Agitate-Solution (PAS) framework and viral LinkedIn post creation.\n\nTask:\nCreate an engaging LinkedIn post using the PAS framework based on the provided title and description, optimized for maximum engagement and conversion.\n\nContext:\nThe Problem-Agitate-Solution (PAS) framework is a powerful copywriting technique that can be used to create engaging LinkedIn posts. Here is the structure of the PAS framework:\n●\nProblem: Start by identifying a problem that your target audience is facing. This could be anything from a lack of leads to a low conversion rate. State the problem clearly and concisely in a way that your audience will relate to.\n●\nAgitate: Once you've identified the problem, you need to agitate it. This means making your audience feel the pain of the problem. You can do this by highlighting the negative consequences of the problem, or by sharing stories of people who have struggled with it.\n●\nSolution: Finally, you need to offer a solution to the problem. This is where you pitch your product or service as the answer to your audience's prayers. Explain how your solution works and why it's the best option available.\nHere are some tips for using the PAS framework on LinkedIn:\n●\nBe specific: The more specific you can be about the problem, the more your audience will relate to it.\n●\nUse strong language: Don't be afraid to use strong language to agitate the problem.\n●\nBack up your claims: Use data, case studies, and testimonials to support your claims about your solution.\n●\nInclude a call to action: Tell your audience what you want them to do next, whether it's visiting your website, downloading a lead magnet, or booking a call.\n\n\nCompany details:\nAbout FusionSyncAI:\nFusionSyncAI is a leading AI-driven sales automation agency serving clients in the USA, Canada, Israel, and globally. The company is recognized for its agile, personal approach, Top Rated Plus status on Upwork, and over 30+ successful client engagements with consistent 5-star reviews. Our mission is to maximize sales productivity and efficiency through tailored, results-oriented automation solutions.\n\nFusionSyncAI AI Sales System Core Context:\n\nProprietary omni-channel AI Agent for lead qualification, nurturing, and booking meetings automatically\n\nIntelligent communications hub supporting voice, SMS, email, WhatsApp, and more\n\nAutomated voice campaigns, appointment reminders, and smart follow-up to ensure no leads slip through the cracks\n\nDelivers 40% more leads, 35% higher conversions, and saves 25+ hours per week per sales rep\n\nAchieves up to 90% faster response times, 95% reduction in scheduling conflicts, and 80% higher engagement versus traditional methods\n\nRecallSync Product Context:\nRecallSync is FusionSyncAI's signature sales enablement platform—transforming outbound efforts with personalized, multi-channel outreach sequences, one-click calendar scheduling, and prospect nurturing powered by AI. Built to help agencies and B2B teams automate sales pipelines, increase follow-up velocity, and convert more deals than ever before.\n\nSpecifics:\nYour LinkedIn post will include the following sections:\n\nProblem Section:\n- Identify a clear, specific problem from the provided title/description\n- Make it relatable to the target audience\n- Use concise, impactful language\n- Include relevant statistics or social proof if applicable\n\nAgitate Section:\n- Emphasize the pain points\n- List 2-3 negative consequences\n- Use emotional triggers\n- Create urgency without being pushy\n- Include real-world examples or scenarios\n\nSolution Section:\n- Present a clear, actionable solution\n- Break down the solution into 3-5 steps\n- Include specific benefits\n- Back claims with data or examples\n- Add credibility elements\n\nPost Format Requirements:\n- Use short, scannable paragraphs\n- Include strategic line breaks\n- Add relevant emojis (2-3 max per section)\n- Include bullet points or numbered lists\n- End with a clear call-to-action\n- Add 3-5 relevant hashtags\n\nInput Parameters:\n- Idea : {The main topic or focus}\n- Description: {Detailed context about the topic}\n- significance: {importance of the topic}\n- Implcations: { what will ne the implications }\n\nOutput Format:\nThe post should follow LinkedIn's best practices:\n- Hook in first 2-3 lines\n- Total length: 1300-1500 characters\n- Professional tone\n- Engaging storytelling elements\n- Strategic use of white space\n\nExample Output Structure:\n\n[Attention-grabbing hook]\n\n[Problem statement]\n\n[List of pain points]\n\n[Agitation points with examples]\n\n[Solution introduction]\n\n[Step-by-step solution breakdown]\n\n[Benefits/Results]\n\n[Call-to-action]\n\n[Hashtags]\n\n\nHere is an Post Example :- \n\n```🏠 Real Estate's Silent Revolution: Are You Ready to Let AI Handle Your Client Calls? 🤖\n\n🔍  In real-estate business speedy client communication is crucial. Yet, Answering hundreds of inquiries can be overwhelming even for seasoned professionals.\n\nDid you know that most of potential buyers lose interest due to delayed responses?📉 \n\n👥 Imagine losing a big deal simply because you couldn’t respond in time. Frustrated clients can hit your reputation hard, leading to fewer referrals. Missed opportunities due to mishandled inquiries can add up to a significant dip in your revenue. The stress of monitoring calls andemails, atop handling existing transactions, can severely hinder your ability to thrive in an ever more competitive market.\n\n💡AI Sales Systems to the Rescue:🌟 \nStep 1:Simple Integration – Begin by incorporating AI into your customer service workflows. These systems can handle basic inquiries 24/7, ensuring no call goes unanswered.🔄 \nStep 2: Enhanced Efficiency – Automate appointment bookings and follow-ups. AI can manage schedules seamlessly, freeing up your time for more critical tasks.📈 \nStep 3: Data-Driven Insights – Gain valuable insights from AI analytics to tailor your approach, improving customer satisfaction and increasing closing rates.🙌 \n\nBenefits:\n- Faster response times translate to happier clients.\n- Increased productivity allows you to focus on high-stakes negotiations.\n- Streamlined operations reduce costs and enhance profitability.🎯 \n\nWant to learn more about how AI can skyrocket your real estate business? Dive into our full guide on system integration and practical benefits today! DM us today!\n\n#RealEstateInnovation #ProductivityBooster```\n\nNotes:\n- Ensure each post follows LinkedIn's content guidelines\n- Focus on providing actionable value\n- Use data and specific examples when possible\n- Maintain a professional yet conversational tone\n- Include engagement triggers throughout the post\n- Give proper formated and structred posts without any markdown.\n- Do not use AI Jagrons and make sure that post should look line that it is written by an proffesional more specificaly an human.\n\nImportant:-Make sure that the writing style is really natural and does not include any AI jargon like \"here is the silver lining\", \"In today's fast world\" etc. Make sure to use human-like tone while writing."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -304,
+        512
+      ],
+      "id": "118f0b94-5186-467b-a6a1-24f01638f9a6",
+      "name": "AI Agent for PAS post Creation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=here is the linkedin Post - {{ $json.output }}",
+        "options": {
+          "systemMessage": "Role:\nYou are an expert AI Image Description Specialist who converts LinkedIn post concepts into clear, precise image descriptions.\n\nTask:\nCreate a concise, detailed image description that captures the post's core message in a visually compelling way.\n\nContext:\nThe description should be specific enough for AI image generation while maintaining professional LinkedIn standards.\n\nSpecifics:\nProvide the description in this exact format:\n\nMAIN SCENE:\n[One clear sentence describing the primary visual setup]\n\nKEY ELEMENTS:\n1. Subject: [Primary focus/person/object]\n2. Action: [What the subject is doing]\n3. Setting: [Immediate environment]\n4. Props: [2-3 relevant objects]\n\nSTYLE:\n- Visual Style: [e.g., professional photography, modern illustration]\n- Colors: [2-3 specific colors]\n- Lighting: [One specific lighting style]\n- Angle: [One specific viewing angle]\n\nAVOID:\n[3 specific elements to exclude]\n\nExample Output:\n\nMAIN SCENE:\nA professional businesswoman presenting data on a holographic display in a modern, minimalist office.\n\nKEY ELEMENTS:\n1. Subject: Female executive in business attire\n2. Action: Gesturing towards floating data visualization\n3. Setting: Clean, modern office space\n4. Props: Holographic display, glass desk, smart device\n\nSTYLE:\n- Visual Style: Corporate photography\n- Colors: Navy blue, silver, soft white\n- Lighting: Bright natural lighting\n- Angle: Three-quarter view\n\nAVOID:\n- Cluttered backgrounds\n- Casual clothing\n- Do Not create highly futureestic images"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        352,
+        304
+      ],
+      "id": "5719dfad-e4b0-4718-ba37-e4a27c06b5c2",
+      "name": "Image Description"
+    }
+  ],
+  "pinData": {
+    "Airtable Trigger1": [
+      {
+        "json": {
+          "id": "recpv3ik7ruTPlDJA",
+          "createdTime": "2025-01-13T10:36:19.000Z",
+          "fields": {
+            "Topics": "Real Estate's Silent Revolution: Why Top Brokers Are Switching to AI Voice Systems",
+            "Discription": "An insight into how AI voice agents are transforming traditional real estate operations, handling hundreds of client inquiries simultaneously while reducing response times from hours to seconds.",
+            "Status": "Approved",
+            "MODIFIED": "2025-09-03T18:09:06.000Z"
+          }
+        }
+      }
+    ],
+    "Posting trigger": [
+      {
+        "json": {
+          "id": "recMfXarbScikMe2c",
+          "createdTime": "2025-09-04T07:05:53.000Z",
+          "fields": {
+            "Idea": "AI Sales Systems: Transforming Sales Teams for Faster Deal Closures",
+            "Discription": "AI Sales Systems are revolutionizing sales by automating repetitive tasks like lead qualification and follow-ups, freeing sales reps to focus on high-value interactions and closing deals. These systems leverage AI to identify promising leads, personalize communication, and provide actionable insights, leading to a more efficient and productive sales process.",
+            "Implications": "The adoption of AI in sales is rapidly increasing, driven by the need for greater efficiency and improved conversion rates. The sales automation market is projected to grow at a CAGR of 10.4% from 2024 to 2030. Expert say that AI-powered sales automation isn't just a shortcut - it's a strategic advantage, enabling sales teams to build systems that think, act, and improve on their own. The teams winning in 2025 aren't the ones sending more emails or updating CRMs faster. Implementation includes: Professionals can begin by identifying key pain points in their current sales process that could be alleviated by AI automation. This could involve implementing AI-powered CRM tools for lead scoring, using AI writing assistants to personalize email outreach, or leveraging AI analytics to gain deeper insights into customer behavior. Starting with pilot projects and gradually scaling up AI adoption can minimize disruption and maximize ROI.",
+            "Significance": "The adoption of AI in sales is rapidly increasing, driven by the need for greater efficiency and improved conversion rates. The sales automation market is projected to grow at a CAGR of 10.4% from 2024 to 2030. Expert say that AI-powered sales automation isn't just a shortcut - it's a strategic advantage, enabling sales teams to build systems that think, act, and improve on their own. The teams winning in 2025 aren't the ones sending more emails or updating CRMs faster. Implementation includes: Professionals can begin by identifying key pain points in their current sales process that could be alleviated by AI automation. This could involve implementing AI-powered CRM tools for lead scoring, using AI writing assistants to personalize email outreach, or leveraging AI analytics to gain deeper insights into customer behavior. Starting with pilot projects and gradually scaling up AI adoption can minimize disruption and maximize ROI.",
+            "LinkedIn Post": "The idea that sales teams need to just \"push harder\" or \"make more calls\" is OUTDATED. The real game-changer? It’s **AI Sales Systems** – and they are fundamentally transforming how deals get done. 🚀\n\nWe've all seen sales reps bogged down by endless admin: sifting through leads, manual follow-ups, crafting emails from scratch. It’s a HUGE drain on time and energy, often leading to missed opportunities and a mountain of frustration. Sales isn't just about connection; it's also about the GRIND. But what if we could eliminate most of that grind? ✨\n\nThat’s where AI Sales Systems come in. Imagine AI agents handling the heavy lifting – meticulously qualifying leads, personalizing outreach with incredible precision, and ensuring no follow-up ever slips through the cracks. It's about letting your sales team focus on what they do BEST: building relationships, strategizing, and ultimately, CLOSING DEALS. 🔥\n\nThis isn't just a futuristic dream; it's happening right now. The sales automation market is set to explode, growing by 10.4% annually from 2024 to 2030. Experts aren't just saying AI is a shortcut; they're calling it a **strategic advantage**. The winning sales teams of tomorrow aren't the fastest at updating their CRM manually – they're the ones building intelligent systems that think, act, and constantly improve.\n\nReady to unlock this power for your team? Start small. Pinpoint those repetitive tasks that drain your team's energy. Maybe it's lead scoring with AI-powered CRM, personalizing outreach with AI writing assistants, or leveraging AI analytics for deeper customer insights. Small pilot projects can lead to HUGE returns and a smooth transition. ➡️\n\nAt FusionSyncAI, we believe in empowering sales professionals to achieve more. We're passionate about helping businesses implement these game-changing AI solutions, giving your team the tools to not just meet quotas, but absolutely SMASH them. Let's talk about building an intelligent sales future, together! 💬\n\n#AISales #SalesAutomation #SalesStrategy #FutureofSales #AI #Productivity #FusionSyncAI",
+            "CREATED": "2025-09-04T07:05:53.000Z",
+            "MODIFIED": "2025-09-04T07:09:18.000Z",
+            "Status": "Approved",
+            "Image": [
+              {
+                "id": "attrNr2GIgwN9vnNj",
+                "width": 1024,
+                "height": 1024,
+                "url": "https://v5.airtableusercontent.com/v3/u/44/44/1756980000000/OhDUUDsToX8-ETyux9JiPg/gK63vIW-ohtI-NkRNakYDGd1NCeRN1oYH5KTlI_ABsn7WHkecoHcznhJmd6fXcSWUOPd5j3oJJbr3yOaKED0sE362a-gBuGRI3xN8-fnBzEZv0_zVjgg_6jaiDLqH3YtNQQjVUASKQHZMyGHKfyp_Igvgn11B7wpZbfR3INSBq0/BIFnNFVlFd3f574DpfTxwLiJ-DftUpU8oRO0XQfU58I",
+                "filename": "download.jpg",
+                "size": 212420,
+                "type": "image/jpeg",
+                "thumbnails": {
+                  "small": {
+                    "url": "https://v5.airtableusercontent.com/v3/u/44/44/1756980000000/Tw6YqyEVHGOcvS50YSS7DA/fwlREp0USMVOfMChBGiAGYD_m49kTEJE8o7UYoaC6Q7Goi8HsmqJrcMQpqBx2wxTS7LVwIUyVLbWncaZVXehm1bvL_U35HD-Zc_Ob8ab3IVwK0u76dMfcXg7LBfrPhFYthjZOiuBaJPh_p7BOwOBsg/x3yBY-_zsTW7pwhprU-BK-S_1626hB4YvwFiHgM_Ds8",
+                    "width": 36,
+                    "height": 36
+                  },
+                  "large": {
+                    "url": "https://v5.airtableusercontent.com/v3/u/44/44/1756980000000/w_iCE-rmSHeVCANfS8QglQ/indTau1AX4e1BAAnfke8p4Ql4t16cbGhTHOlbJ3OsatRzuj7ucNzRn9PHnNlrsvrIpgB7j-NK4M-pfVeNDUus815-e8tbRoaRCYxuAbIawpbnTn_K7VK8bhdoEd1onmhjl386jTQ1ffXWcKUTXE3sA/mNPoqdLB075xnY28BSFjIsLA_E5gpmyvS8_PXa-3fms",
+                    "width": 512,
+                    "height": 512
+                  },
+                  "full": {
+                    "url": "https://v5.airtableusercontent.com/v3/u/44/44/1756980000000/owXa8Y_lHo6vxI_nejBg-g/tPhrFkqyww4VZUgKkX9ZxSjcqYAq65a5Si2e58z4yrYkRGfeRj0tXYi2ijiszZmXAldozLwICykN0oobz1m3rHiN2eQ5K0f1Z1R1LhrQUAWkX1WQ8WKlD6Sb2R8xRllV58wGqpeAgoZYikBieY4EWQ/sUKMFpsDbmhNHs_Fw9PJd5jRoFjC-p3ThS-aVv60cAY",
+                    "width": 1024,
+                    "height": 1024
+                  }
+                }
+              }
+            ],
+            "Image Discription": "MAIN SCENE:\nA modern sales team is collaborating in a brightly lit office, enhanced by subtle AI interfaces that streamline their workflow.\n\nKEY ELEMENTS:\n1. Subject: Diverse sales team members\n2. Action: Collaborating and analyzing AI-driven insights\n3. Setting: Open-plan, modern office\n4. Props: Interactive dashboards, laptops, digital pens\n\nSTYLE:\n- Visual Style: Modern professional photography\n- Colors: Teal, white, and light gray\n- Lighting: Soft, diffused lighting\n- Angle: Eye-level view\n\nAVOID:\n- Overly futuristic interfaces\n- Solitary figures\n- Empty office spaces"
+          }
+        }
+      }
+    ],
+    "Topic Research Agent": [
+      {
+        "json": {
+          "output": {
+            "Idea": "Real Estate's Silent Revolution: AI Voice Systems",
+            "Description": "Explore how AI voice agents are revolutionizing real estate, handling inquiries and slashing response times.",
+            "Significance": "AI-powered solutions enhance efficiency, reduce operational costs, and improve customer experience in real estate. JLL research indicates that approximately 10% of global PropTech companies now offer AI solutions. A case study reveals a leading real estate firm cut costs by 60% and increased lead conversion by 30% using AI calling agents.",
+            "Implementation": "AI professionals can develop and implement AI voice solutions for real estate, focusing on natural language processing, lead qualification, and seamless integration with existing CRM systems. This includes building custom AI models or fine-tuning existing ones to address specific real estate needs."
+          }
+        }
+      }
+    ],
+    "Point of View Post Creation": [
+      {
+        "json": {
+          "output": "The real estate world isn't just about location, location, location anymore. It's about *conversation, conversation, conversation* – and AI is making it happen at warp speed. 🚀\n\nImagine a future where every single property inquiry, no matter the hour, gets an instant, intelligent, and personalized response. That's not a distant dream; that's the silent revolution AI voice agents are bringing to real estate right NOW. They’re not just answering calls; they’re building bridges to future homeowners and renters, slashing response times, and making every potential lead feel valued.\n\nThis isn't just hype. JLL research indicates a significant shift, with roughly 10% of global PropTech companies already integrating AI solutions. And the results speak volumes: we've seen a leading real estate firm *cut costs by a phenomenal 60%* and boost their lead conversion rates by an impressive 30% using AI calling agents. Think about that impact! ✨\n\nAt FusionSyncAI, we believe this technology isn't just about automation; it's about supercharging human potential and redefining customer experience.\n\nHere’s how AI voice systems are fundamentally reshaping real estate:\n➡️  **Instant, Intelligent Responses:** 24/7 personalized engagement means no lead is ever left waiting.\n➡️  **Massive Efficiency Gains:** Free up your team from repetitive tasks to focus on complex negotiations and client relationships.\n➡️  **Data-Driven Conversions:** AI agents can qualify leads and guide conversations, leading to higher conversion rates and lower operational overhead.\n\nWe’re passionate about developing and implementing these cutting-edge AI voice solutions. From advanced natural language processing to seamless integration with your existing CRM systems, we’re building custom AI models tailored specifically for the unique demands of the real estate market.\n\nThis is about more than just technology; it's about empowering real estate businesses to thrive in a faster, more connected world. What opportunities do you see with AI voice in real estate? Let's discuss! 👇\n\n#RealEstate #PropTech #AIVoice #AICallingAgents #CustomerExperience #DigitalTransformation #Innovation #FusionSyncAI"
+        }
+      }
+    ]
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "updatedAt": "2025-09-03T16:31:02.410Z",
+      "createdAt": "2025-09-03T16:31:02.410Z",
+      "role": "workflow:owner",
+      "workflowId": "1vww9vvO60iiiH5l",
+      "projectId": "Yc7I0DyzOOYZN2cA"
+    }
+  ],
+  "staticData": {
+    "node:Airtable Trigger1": {
+      "lastTimeChecked": "2026-05-01T00:55:10Z"
+    },
+    "node:Posting trigger": {
+      "lastTimeChecked": "2026-05-01T00:55:06Z"
+    }
+  },
+  "tags": [
+    {
+      "updatedAt": "2025-09-03T16:31:31.216Z",
+      "createdAt": "2025-09-03T16:31:31.216Z",
+      "id": "nv2VmY8GS4zG83LS",
+      "name": "linkedIn"
+    }
+  ],
+  "triggerCount": 2,
+  "updatedAt": "2025-09-04T07:33:00.650Z",
+  "versionId": "6d217522-e0e5-4945-beeb-cf2910975a16"
+}
