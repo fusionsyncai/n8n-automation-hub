@@ -17,17 +17,26 @@ Powered by **FusionSync AI**. Every implementation ends with a CTA: need help se
 | **Workflow implementation** | `implementation` | Yes | Someone can follow steps and install the automation in their stack. |
 | **Playbook** | `playbook` | No | Theory + architecture + tools. Often published **before** the matching implementation. |
 
-### Implementation post structure (required sections)
+### Implementation post structure (required sections, in this order)
 
-1. **Overview**: What the workflow does and what business problem it solves (outcomes, not node names).
-2. **Architecture**: High-level flow (diagram or bullet pipeline). Data stores, human steps, external APIs.
-3. **Prerequisites**: Accounts, credentials, sheets structure, Slack app scopes, etc.
-4. **Step-by-step setup**: Numbered steps aligned with screenshots Vishal provides. n8n node names, sheet columns, Slack interaction patterns.
-5. **Workflow export**: Link or embedded JSON import instructions when available.
-6. **Operations**: Failure modes, retries, logging, who owns the sheet, how to audit sends.
-7. **CTA**: Added automatically by the post layout (do not put `<CtaBlock />` in MDX).
-   Implementation posts get **"Need help setting this up?"**; playbooks get **"Want this built for you?"**
-   Mid-post nudges may still use `<InlineCta />`.
+This is the canonical structure. Match it for every implementation post. Use
+`content/posts/implement-ai-form-replies-human-in-the-loop.mdx` and
+`content/posts/linkedin-post-automation-ai-agents-n8n.mdx` as the reference posts.
+
+1. **Intro (no heading)**: 2 short paragraphs. First is the problem hook (who feels the pain, why the naive fix fails). Second is what this guide builds plus the key design decision, with a link to the `companionSlug` playbook.
+2. **## Available resources**: Numbered list of the assets (workflow + data store), immediately followed by the `<WorkflowDownload />` card pointing at `public/workflows/[slug].json`.
+3. **## What you'll need**: Numbered prerequisites with bolded lead-ins (accounts, credentials, app scopes, LLM key).
+4. **## Overview of the automation**: 1-2 framing sentences, a numbered list of the phases (a human approval usually sits between them), the `<WorkflowDiagram />`, then one paragraph on the important design decision.
+5. **## Step-by-step setup**: `###` numbered subsections. Start with "Set up the [data store]" (schema/columns table), then "Connect credentials in n8n", then "Build phase one ...", "Build phase two ...", and end with "Import the workflow JSON". Use bolded action lead-ins and fenced code for expressions, code, and Block Kit / JSON.
+6. **## Testing the workflow**: Numbered validation walkthrough that exercises the human gate, plus the most common failure point.
+7. **## Customization options**: Bullet list with bolded lead-ins (swap model, replace form, auto-send, routing, etc.).
+8. **## Common mistakes that quietly break this**: Bullet list of failure modes (system of record, correlation keys, fast webhook ack, idempotency, security/PII).
+9. **`<InlineCta />`**: A single bare inline CTA right before the conclusion.
+10. **## Conclusion**: Wrap-up paragraph restating the outcome and the human-in-control payoff.
+
+The page-level CTA is added automatically by the post layout (do not put
+`<CtaBlock />` in MDX). Implementation posts get **"Need help setting this up?"**;
+playbooks get **"Want this built for you?"**
 
 ### Playbook post structure (required sections)
 
@@ -94,8 +103,11 @@ featured: true   # sparingly, for homepage hero
 
 ## Agent checklist for new implementation posts
 
-- [ ] Overview answers "what does it do?" in plain language
-- [ ] Steps match screenshots in order Vishal provided
+- [ ] Sections follow the canonical order: intro hook, Available resources, What you'll need, Overview of the automation, Step-by-step setup, Testing the workflow, Customization options, Common mistakes, `<InlineCta />`, Conclusion
+- [ ] Intro is 2 paragraphs with no heading (problem hook, then what you build)
+- [ ] `<WorkflowDownload />` sits under "Available resources" and the JSON exists in `public/workflows/[slug].json`
+- [ ] Step-by-step uses `###` subsections (data store, credentials, phase one, phase two, import JSON)
+- [ ] Testing section exercises the human-in-the-loop gate
 - [ ] Sheet column names and Slack button actions are explicit
 - [ ] No invented metrics; use `TODO(stat)` if a number is needed later
 - [ ] CTA to Cal.com booking URL via site config

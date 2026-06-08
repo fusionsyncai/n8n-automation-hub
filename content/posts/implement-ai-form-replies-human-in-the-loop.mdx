@@ -1,0 +1,325 @@
+---
+title: "How to Automate Lead Follow-Ups with n8n, Gemini AI, Slack, and Gmail"
+description: "Install an n8n workflow that captures website form leads, drafts a reply with one AI agent, then runs a Slack approve or rewrite loop before saving a Gmail draft, logged in Google Sheets."
+slug: "implement-ai-form-replies-human-in-the-loop"
+publishedAt: "2026-06-05"
+updatedAt: "2026-06-06"
+author: "n8n-hub-team"
+category: "ai-agents-automation"
+contentType: implementation
+companionSlug: "playbook-ai-form-replies-human-in-the-loop-slack"
+tags:
+  [
+    "n8n",
+    "AI agents",
+    "human-in-the-loop",
+    "Slack",
+    "Google Sheets",
+    "Gmail",
+    "forms",
+  ]
+featured: false
+draft: false
+---
+
+Lead follow-up is a speed problem and a trust problem at the same time. Reply fast and you win the deal, but a generic auto-responder that misreads the question does more harm than silence. Most "AI reply" setups pick one side: instant and careless, or careful and slow.
+
+This guide builds the version that holds both. A lead submits a form, n8n logs the row in Google Sheets, **one AI agent** drafts a personalized first reply, and the draft goes to Slack with two buttons: **Approve and Send** or **Rewrite**. Nothing reaches the lead until a human signs off, and on approval n8n creates a **Gmail draft** for a final human read. It is the installable build of the [form-to-reply playbook](/posts/playbook-ai-form-replies-human-in-the-loop-slack).
+
+## Available resources
+
+This build uses two assets you will set up below:
+
+1. **n8n workflow** "Email Draft - For web form submission" (capture, draft, Slack review loop, Gmail draft).
+2. **Google Sheet** "Leads" (the system of record and audit log for every lead and its status).
+
+<WorkflowDownload
+  file="/workflows/implement-ai-form-replies-human-in-the-loop.json"
+  title="Email Draft - For web form submission"
+/>
+
+## What you'll need
+
+Before you begin, make sure you have:
+
+1. An **n8n account** (cloud or self-hosted) reachable at a public HTTPS webhook URL.
+2. A **Slack workspace** and a Slack app with a bot token, plus Interactivity enabled.
+3. A **Google account** with one Google Sheet used as the system of record.
+4. A **Gmail account** for draft creation.
+5. An **LLM API key** for the agent (any chat model works; this build uses Google Gemini).
+
+## Overview of the automation
+
+The automation runs in two phases that share one Google Sheet. A human approval sits between them.
+
+1. **Draft creation.** A form submission logs the lead to Google Sheets, one AI agent drafts a personalized first reply, and the draft is posted to Slack with Approve and Rewrite buttons.
+2. **Review and send.** Approving the draft creates a Gmail draft. Choosing Rewrite opens a Slack modal for feedback, the same agent rewrites the email, and the new version is reposted with the same buttons. This loops until someone approves.
+
+One agent does both jobs (first draft and rewrites), so there is only a single prompt and model to maintain. A small Switch reads where the run started and sends the agent's output to the right place.
+
+<WorkflowDiagram caption="Lead form to Gmail draft, with a Slack approve or rewrite loop before anything is saved.">
+  <WorkflowStep
+    node="n8n Form"
+    via="form trigger"
+    detail="Capture Name, Email, and Message from the lead."
+  />
+  <WorkflowStep
+    node="Google Sheets"
+    via="append"
+    detail="Write one row per lead: name, email, message, created_at."
+  />
+  <WorkflowStep
+    node="AI agent"
+    detail="One agent drafts the first reply, and later rewrites it from Slack feedback."
+  />
+  <WorkflowStep
+    node="Route Agent Output"
+    via="switch"
+    detail="Send a fresh draft to Slack, or a rewrite back to the same Slack thread."
+  />
+  <WorkflowStep
+    node="Slack"
+    via="Block Kit"
+    detail="Post the draft with Approve and Rewrite buttons."
+  />
+  <WorkflowStep
+    node="n8n"
+    via="interactivity webhook"
+    detail="Route the click: approve, or open a feedback modal to rewrite."
+  />
+  <WorkflowOutput>Gmail draft created on approve</WorkflowOutput>
+  <WorkflowOutput>
+    Rewrite loop: modal feedback, AI rewrite, repost until approved
+  </WorkflowOutput>
+  <WorkflowOutput>
+    Google Sheets: row status, draft text, Slack message id
+  </WorkflowOutput>
+</WorkflowDiagram>
+
+The important design decision is the **approval gate before anything leaves the building**. Drafting is cheap and reversible. An email to a prospect is neither. Keeping the Gmail draft behind a human click means a misread inquiry dies quietly in Slack instead of landing in a lead's inbox.
+
+## Step-by-step setup
+
+### 1. Set up the Google Sheet
+
+Create one Google Sheet (the example names it "Leads") with these columns. `Created_At` doubles as the stable key you match on for every later update.
+
+| Column         | Purpose                                                    |
+| -------------- | ---------------------------------------------------------- |
+| `Lead_Name`    | Lead display name from the form                            |
+| `Lead_Email`   | Reply-to address for the Gmail draft                       |
+| `Lead_Message` | The free-text message the lead submitted                   |
+| `Created_At`   | Timestamp, also used as the row match key                  |
+| `AI_Draft`     | The latest draft text for audit                            |
+| `Message_Id`   | Slack message timestamp, used to correlate clicks to a row |
+| `Send_Status`  | Optional status column for tracking                        |
+
+### 2. Connect credentials in n8n
+
+Add four credentials so the agent, Slack, Sheets, and Gmail nodes can authenticate:
+
+1. **Google Sheets** (OAuth2) with read and write on the Leads sheet.
+2. **Google Gemini** for the chat model behind the agent.
+3. **Slack** (bot token) with `chat:write`, plus Interactivity enabled.
+4. **Gmail** (OAuth2) for draft creation.
+
+### 3. Build phase one: capture, draft, and post to Slack
+
+**Capture the lead.** Add a `Form Trigger` named `Lead Form Trigger` with three fields: `Name`, `Email` (email type), and `Message`. This gives you a hosted form URL you can link from your site, or replace later with a Webhook node if you use Typeform, Tally, or a custom form.
+
+**Save the lead to Google Sheets.** Add a `Google Sheets` node named `Save Lead to Sheet` set to **Append**. Map `Lead_Name`, `Lead_Email`, and `Lead_Message` from the form, and `Created_At` from the submission time formatted as `yyyy-MM-dd HH:mm:ss`.
+
+**Draft the reply with one AI agent.** Add a LangChain `AI Agent` named `Email Agent` with a `Google Gemini Chat Model` attached. This single agent does both jobs: it writes the first draft now, and later rewrites that draft from reviewer feedback. You do not need a second agent or a memory node, because every call already receives the full context it needs.
+
+Because the same agent handles rewrites, set its input to switch on whether reviewer feedback is present. New leads have no `feedback` field, so the agent drafts; rewrites carry `feedback`, so it edits:
+
+```text
+={{ $json.feedback
+  ? `Rewrite the previous email applying the reviewer's feedback.\n\nPrevious Email:\n${$json.prev_email}\n\nImprovements requested by the reviewer:\n${$json.feedback}`
+  : `New inbound inquiry. Write the first-draft reply.\n\nClient Name: ${$json.Lead_Name}\nClient Email: ${$json.Lead_Email}\nClient Message:\n${$json.Lead_Message}` }}
+```
+
+Keep one combined system prompt that covers both jobs: greet the client by first name, answer the actual question, sign off with your team name, never emit bracketed placeholders or invented links, and return a fixed format so downstream parsing stays reliable:
+
+```text
+Subject: <one-line subject>
+
+<email body>
+```
+
+**Route the agent output, then post to Slack.** Because one agent serves both a fresh draft and later rewrites, send its output through a `Switch` named `Route Agent Output`. On a brand-new lead, route to `Post Draft to Slack`; on a rewrite, route to `Repost Rewritten Draft` (phase two). The Switch tells them apart by checking which earlier node ran in this execution:
+
+- Draft path: `{{ $('Save Lead to Sheet').isExecuted }}` is `true`.
+- Rewrite path: `{{ $('Parse Slack Payload').isExecuted }}` is `true`.
+
+Use `.isExecuted` rather than reading the agent's input fields directly, because the agent does not pass those fields through.
+
+Now add a `Slack` node named `Post Draft to Slack` using **Block Kit**. Render the draft in a section block, then an actions block with two buttons:
+
+```json
+{
+  "blocks": [
+    {
+      "type": "section",
+      "text": { "type": "mrkdwn", "text": "{{ JSON.stringify($json.output) }}" }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": { "type": "plain_text", "text": "Approve & Send" },
+          "value": "approve",
+          "action_id": "email_approve"
+        },
+        {
+          "type": "button",
+          "text": { "type": "plain_text", "text": "Rewrite" },
+          "value": "rewrite",
+          "action_id": "email_rewrite"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Save the Slack message id back to the row.** Add a `Google Sheets` node named `Save Message ID` set to **Update**, matching on `Created_At`. Store the Slack message timestamp as `Message_Id`. This is how a future button click finds the right lead row.
+
+### 4. Build phase two: the Slack approve and rewrite loop
+
+**Receive Slack interactivity with a webhook.** Add a `Webhook` node named `Slack Interaction Webhook` (POST, path `slack-rdkd`). Set it to respond **immediately** with no body. Slack needs a fast response, and the trigger id used to open a modal expires within a few seconds, so do the slow work after the acknowledgement. In your Slack app settings, enable **Interactivity** and set the Request URL to your production webhook URL, for example `https://your-n8n-domain/webhook/slack-rdkd`.
+
+<Callout variant="warning" title="Verify the Slack signature">
+  Slack cannot send a custom auth header, so a Slack interactivity webhook
+  cannot use header auth. Verify the `x-slack-signature` against your signing
+  secret in the next node instead, otherwise anyone who learns the URL can
+  trigger drafts.
+</Callout>
+
+**Parse the Slack payload.** Add a `Code` node named `Parse Slack Payload`. Slack sends two shapes to the same URL: a `block_actions` event when a button is clicked, and a `view_submission` event when the modal is submitted. Branch on the type:
+
+```js
+const raw = $input.first().json.body.payload;
+const payload = typeof raw === "string" ? JSON.parse(raw) : raw;
+
+if (payload.type === "block_actions") {
+  const action = payload.actions[0];
+  const fullEmailText = payload.message.blocks[0].text.text;
+  const lines = fullEmailText.split("\n");
+  return {
+    json: {
+      event_type: action.value, // approve or rewrite
+      message_ts: payload.message.ts,
+      trigger_id: payload.trigger_id,
+      email_subject: lines[0].replace("Subject: ", "").trim(),
+      email_body: fullEmailText
+        .substring(fullEmailText.indexOf("\n\n") + 2)
+        .trim(),
+      full_email_text: fullEmailText,
+    },
+  };
+}
+
+if (payload.type === "view_submission") {
+  const metadata = JSON.parse(payload.view.private_metadata);
+  return {
+    json: {
+      event_type: "view_submission",
+      feedback: payload.view.state.values.feedback_block.feedback_input.value,
+      prev_email: metadata.prev_email,
+      message_ts: metadata.message_ts,
+    },
+  };
+}
+
+throw new Error(`Unsupported Slack payload type: ${payload.type}`);
+```
+
+**Route the event.** Add a `Switch` node named `Route Slack Event` with three outputs based on `event_type`: `approve`, `rewrite`, and `view_submission`.
+
+**Approve branch (Gmail draft).** On the `approve` output:
+
+1. `Lookup Lead (Approve)`: a Google Sheets read that finds the row by `Message_Id`.
+2. `Save Approved Draft`: a Google Sheets update that writes the approved text to `AI_Draft`.
+3. `Create Gmail Draft`: a Gmail node set to **draft**, using the parsed subject and body.
+
+The draft is created, not sent, so a human can do a final review in Gmail before it goes out.
+
+**Rewrite branch (open a feedback modal).** On the `rewrite` output, add an `HTTP Request` node named `Open Feedback Modal` that calls the Slack `views.open` API with the click's `trigger_id`. The modal shows a multi-line feedback input and carries the draft plus the message id in `private_metadata` so the next step has context:
+
+```json
+{
+  "trigger_id": "{{ $json.trigger_id }}",
+  "view": {
+    "type": "modal",
+    "callback_id": "rewrite_modal",
+    "private_metadata": "{{ JSON.stringify({ message_ts: $json.message_ts, prev_email: $json.full_email_text }) }}",
+    "title": { "type": "plain_text", "text": "Rewrite Email" },
+    "submit": { "type": "plain_text", "text": "Submit" },
+    "blocks": [
+      {
+        "type": "section",
+        "text": { "type": "mrkdwn", "text": "*Current draft:*" }
+      },
+      {
+        "type": "input",
+        "block_id": "feedback_block",
+        "label": { "type": "plain_text", "text": "What should we improve?" },
+        "element": {
+          "type": "plain_text_input",
+          "action_id": "feedback_input",
+          "multiline": true
+        }
+      }
+    ]
+  }
+}
+```
+
+A free-text input only renders a Submit button inside a modal, which is why the modal is opened with `views.open` rather than posting an input block into the channel.
+
+**Handle the modal submit (rewrite loop).** On the `view_submission` output:
+
+1. The **same `Email Agent` from phase one** receives the previous email plus the reviewer feedback and returns a new draft in the same `Subject:` format. The conditional input makes the one agent edit instead of draft.
+2. `Route Agent Output` sees this run started from `Parse Slack Payload`, so it sends the result to `Repost Rewritten Draft`, a Slack node that posts the new draft with the same Approve and Rewrite buttons.
+3. `Lookup Lead (Rewrite)` and `Update Message ID (Rewrite)`: Google Sheets steps that keep the row pointed at the latest Slack message.
+
+Because the reposted message has the same buttons, the reviewer can rewrite again or approve. The loop continues until approval triggers the Gmail draft.
+
+### 5. Import the workflow JSON
+
+Grab the ready-made workflow with the download button above, or export your own by opening the workflow in n8n and using the menu to **Download** the JSON. On the target instance, import the file, then re-create or re-select the four credentials from Step 2. Finally, update the Slack channel id and the Google Sheet document id to match your workspace.
+
+## Testing the workflow
+
+Validate each phase before pointing it at real leads:
+
+1. **Submit a test lead.** Fill out the form with a name, email, and a real question. Confirm a row appears in the Leads sheet and a draft posts to your Slack channel with both buttons.
+2. **Read the draft.** Check that the email greets the lead by name, answers the actual question, and contains no bracketed placeholders or invented links.
+3. **Run the rewrite loop.** Click **Rewrite**, type feedback like "make it shorter and add a clear next step", and submit. Confirm a new draft reposts with the same buttons.
+4. **Approve and confirm.** Click **Approve & Send**, then open Gmail and confirm a new **draft** exists (not a sent email) with the approved subject and body.
+
+If a button click does nothing, check the message id first: if `Message_Id` was never saved, the lookup returns no row, which is the most common failure point.
+
+## Customization options
+
+- **Swap the model.** Replace Gemini with OpenAI, Anthropic, or any chat model n8n supports. The agent and prompt stay the same.
+- **Replace the form.** Swap the n8n Form Trigger for a Webhook node fed by Typeform, Tally, or a custom site form, keeping the same Sheets mapping.
+- **Auto-send on approval.** Change the Gmail node from **draft** to **send** once you trust the output, or add a delay before sending.
+- **Route to more reviewers.** Post drafts to different Slack channels by lead type, or add a second approver button before the Gmail step.
+- **Track richer status.** Use the `Send_Status` column to record `Drafted`, `Approved`, and `Sent` for reporting on response times.
+
+## Common mistakes that quietly break this
+
+- **Treating Slack as the record.** The Google Sheet is the audit log. Read the row, do not rely on Slack history, which is easy to edit or lose.
+- **Breaking correlation.** Every button click is matched back to a row by `Message_Id`. If a lookup returns no row, the message id was never saved, so check the `Save Message ID` step.
+- **Slow webhook acknowledgement.** Keep the webhook responding immediately. If the modal stops opening, the trigger id likely expired because a slow node ran before the acknowledgement.
+- **Double approvals.** A double approve can create two Gmail drafts. Disable the buttons after the first action, or check `Send_Status` before creating the draft.
+- **Skipping signature verification.** Verify the Slack signing secret on every callback, and keep the review channel private to limit lead PII exposure.
+
+<InlineCta />
+
+## Conclusion
+
+You now have a lead follow-up engine that replies fast without going rogue. A form submission becomes a researched, on-brand draft in Slack within seconds; a reviewer approves it or rewrites it in a tight loop; and only an approved draft ever lands in Gmail, with every step logged in Google Sheets. Speed when you want it, and a human gate where it counts.

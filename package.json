@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "npm run check:rules && next build",
-    "build:next": "next build",
-    "start": "next start",
+    "dev": "node init && next dev",
+    "build": "node init && npm run check:rules && next build",
+    "build:next": "node init && next build",
+    "start": "node init && next start",
     "lint": "eslint",
     "check:rules": "tsx scripts/check-rules.ts",
     "typecheck": "tsc --noEmit"

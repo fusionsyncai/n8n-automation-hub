@@ -9,6 +9,18 @@ credentials, so we track known IDs here for reuse.
 | ------------------ | ---- | ---------------------------- |
 | `axIx5Q6orHCeiiNZ` | TBD  | Default Header Auth for webhooks |
 
+## Google Sheets (`googleSheetsOAuth2Api`)
+
+| Credential ID      | Name               | Notes                                      |
+| ------------------ | ------------------ | ------------------------------------------ |
+| `c7NQ8ucxBVwUr4Ye` | Harsh Google Sheets | Sheets read/write (Google Review workflows) |
+
+## Gmail (`gmailOAuth2`)
+
+| Credential ID      | Name        | Notes                                      |
+| ------------------ | ----------- | ------------------------------------------ |
+| `3GCa77rU7PHNlpkP` | Harsh Gmail | Gmail send (Google Review Email Sender)    |
+
 ## Google Gemini (`googlePalmApi`)
 
 | Credential ID      | Name        | Notes                          |
