@@ -12,8 +12,15 @@ Before creating or substantially editing any post under `content/posts/`,
 Key points (full detail in the SOP):
 
 - Two content types via `contentType` frontmatter:
-  - `implementation` (primary): installable workflow guide. Overview, prerequisites,
-    step-by-step setup aligned to screenshots, workflow JSON export, operations, CTA.
+  - `implementation` (primary): installable workflow guide. Always follow the
+    canonical section order: intro hook (no heading), `## Available resources`
+    (+ `<WorkflowDownload />`), `## What you'll need`, `## Overview of the automation`
+    (+ `<WorkflowDiagram />`), `## Step-by-step setup` (`###` subsections: data store,
+    credentials, phase one, phase two, import JSON), `## Testing the workflow`,
+    `## Customization options`, `## Common mistakes that quietly break this`,
+    `<InlineCta />`, `## Conclusion`. Reference posts:
+    `implement-ai-form-replies-human-in-the-loop` and
+    `linkedin-post-automation-ai-agents-n8n`.
   - `playbook` (secondary): architecture and research. Problem, target architecture,
     components, human-in-the-loop, data model, guardrails.
 - Pair related posts with `companionSlug` on both (playbook <-> implementation).

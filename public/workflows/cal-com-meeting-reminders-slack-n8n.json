@@ -1,0 +1,1396 @@
+{
+  "name": "Meeting Follow-up On Slack",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "05032fd5-918c-4c64-bf69-0e9f63eb9588",
+              "name": "bookingId",
+              "value": "={{ $json.body.payload.bookingId }}",
+              "type": "number"
+            },
+            {
+              "id": "c78e245b-036b-413a-b67f-29ec8e8d4280",
+              "name": "name",
+              "value": "={{ $json.body.payload.responses.name.value }}",
+              "type": "string"
+            },
+            {
+              "id": "1a0bdda6-684d-4125-be60-d590388fcfb6",
+              "name": "email",
+              "value": "={{ $json.body.payload.responses.email.value }}",
+              "type": "string"
+            },
+            {
+              "id": "7e1cd2be-061e-4dab-a32a-8b5b78884454",
+              "name": "title",
+              "value": "={{ $json.body.payload.title }}",
+              "type": "string"
+            },
+            {
+              "id": "cfb05495-dcf1-4966-9301-5fe1eb0cc832",
+              "name": "startTime",
+              "value": "={{ $json.body.payload.startTime }}",
+              "type": "string"
+            },
+            {
+              "id": "1346f4ab-7a20-46a3-8c53-68a3cb46339a",
+              "name": "endTime",
+              "value": "={{ $json.body.payload.endTime }}",
+              "type": "string"
+            },
+            {
+              "id": "bf7ddafc-d31d-445e-9fe7-00dae9b4e8dc",
+              "name": "additionalNotes",
+              "value": "={{ $json.body.payload.additionalNotes }}",
+              "type": "string"
+            },
+            {
+              "id": "f11dd4e7-c296-45ed-b494-3dc4dc02baf4",
+              "name": "eventTypeId",
+              "value": "={{ $json.body.payload.eventTypeId }}",
+              "type": "number"
+            },
+            {
+              "id": "bd02cf2c-1098-4f2b-b419-9c86a6192ba0",
+              "name": "videoCallUrl",
+              "value": "={{ $json.body.payload.metadata.videoCallUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "4e523660-143b-48bb-a2da-a5ffed210e3c",
+              "name": "triggerEvent",
+              "value": "={{ $json.body.triggerEvent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -784,
+        -144
+      ],
+      "id": "ee815609-6d4c-491e-8809-3252ba01bbeb",
+      "name": "GLOBAL"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "3165521-cal.com",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1008,
+        -144
+      ],
+      "id": "64d42934-d55b-4545-88cd-9012bee6dd53",
+      "name": "Webhook",
+      "webhookId": "fc334072-0353-4f60-a218-cd50b0abd434"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fe069336-4827-413f-85dc-66f7306de251",
+              "leftValue": "={{ $json.triggerEvent }}",
+              "rightValue": "BOOKING_CREATED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -560,
+        -144
+      ],
+      "id": "848665d1-7525-46ba-a8b4-0ae54827e54e",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C08FRU6TCBX",
+          "mode": "list",
+          "cachedResultName": "meeting-updates"
+        },
+        "text": "=🚀 New Meeting Booked\n\n👤 Lead Name: {{ $json.name }}\n📧 Email: {{ $json.email }}\n\n💬 Notes:\n{{ $json.additionalNotes || 'No additional notes provided.' }}\n\n📅 Meeting Time:\n{{ DateTime.fromISO($json.startTime).setZone('Asia/Kolkata').toFormat('dd MMM yyyy, hh a ZZZZ') }}\n\n🔗 Meeting Link:\n{{ $json.videoCallUrl }}\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        -304,
+        -144
+      ],
+      "id": "5b3d00c2-eab4-4f7d-965e-9f57b37fe7f0",
+      "name": "Send a message",
+      "webhookId": "258a3dd6-9d95-4c58-912e-52729411c970",
+      "credentials": {
+        "slackApi": {
+          "id": "S8ADXNnJs6awlXZY",
+          "name": "SK Slack"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q",
+          "mode": "list",
+          "cachedResultName": "Meetings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead_Name": "={{ $json.name }}",
+            "Lead_Email": "={{ $json.email }}",
+            "Lead_Message": "={{ $json.additionalNotes }}",
+            "MeetingTime": "={{ $json.startTime }}",
+            "MeetigLink": "={{ $json.videoCallUrl }}",
+            "Follow_UP 1": "={{ DateTime.fromISO($json.Follow_Up_Time).toISO() }}",
+            "Status_FU_1": "Pending"
+          },
+          "matchingColumns": [
+            "Lead_Email"
+          ],
+          "schema": [
+            {
+              "id": "Lead_Email",
+              "displayName": "Lead_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Name",
+              "displayName": "Lead_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Message",
+              "displayName": "Lead_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MeetingTime",
+              "displayName": "MeetingTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MeetigLink",
+              "displayName": "MeetigLink",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow_UP 1",
+              "displayName": "Follow_UP 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status_FU_1",
+              "displayName": "Status_FU_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        96,
+        -144
+      ],
+      "id": "ee01ded7-8c8f-40aa-940a-119e8e0a45d9",
+      "name": "Add_Meeting_In_Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tYtDZQITx5nmAn8k",
+          "name": "FusionSync"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1024,
+        224
+      ],
+      "id": "60bc1325-05e8-41c2-a65c-b582bf2c5014",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "content": "## New Meeting Added In Calendar - Notification On Slack",
+        "height": 272,
+        "width": 1328,
+        "color": "#682989"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1072,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "790ef6a9-4cc5-4d88-a5eb-bf0067030647",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q",
+          "mode": "list",
+          "cachedResultName": "Meetings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status_FU_1",
+              "lookupValue": "Pending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -816,
+        224
+      ],
+      "id": "d636ed2c-dc30-4219-b867-d9c3c9ae1436",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tYtDZQITx5nmAn8k",
+          "name": "FusionSync"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date().getTime();\n\nreturn $input.all().map(item => {\n  const followUpTime = new Date(item.json['Follow_UP 1']).getTime();\n  return {\n    json: {\n      ...item.json,  // keeps all original fields\n      row: item.json.row_number,\n      now: new Date().toISOString(),\n      followUp: item.json['Follow_UP 1'],\n      isPending: item.json['Status_FU_1'] === 'Pending',\n      isPast: followUpTime <= now,\n      diff_minutes: Math.round((now - followUpTime) / 60000)\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        224
+      ],
+      "id": "e8b533fb-b518-4bc8-b241-842d4e549776",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $('GLOBAL').first().json;\n\nconst meetingTime = new Date(item.startTime);\n\nconst followUp1 = new Date(meetingTime);\nfollowUp1.setUTCMinutes(followUp1.getUTCMinutes() - 90); // 1.5 hours\n\nconst followUp2 = new Date(meetingTime);\nfollowUp2.setUTCMinutes(followUp2.getUTCMinutes() - 60); // 1 hour\n\nconst followUp3 = new Date(meetingTime);\nfollowUp3.setUTCMinutes(followUp3.getUTCMinutes() - 30); // 30 min\n\nreturn [\n  {\n    json: {\n      ...item,\n      Follow_Up_Number: 1,\n      Follow_Up_Time: followUp1.toISOString(),\n      Status: 'Pending',\n    }\n  },\n  {\n    json: {\n      ...item,\n      Follow_Up_Number: 2,\n      Follow_Up_Time: followUp2.toISOString(),\n      Status: 'Pending',\n    }\n  },\n  {\n    json: {\n      ...item,\n      Follow_Up_Number: 3,\n      Follow_Up_Time: followUp3.toISOString(),\n      Status: 'Pending',\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -144
+      ],
+      "id": "07fd893b-9ef4-4f68-a3af-d3bb3679016a",
+      "name": "Creating 3 Follow-Ups"
+    },
+    {
+      "parameters": {
+        "content": "## Before Meeting Follwo_Ups",
+        "height": 480,
+        "width": 1952,
+        "color": "#931B1B"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1056,
+        96
+      ],
+      "typeVersion": 1,
+      "id": "3af2f2e8-4355-4497-9907-2d350874483e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8d7dacfa-a31e-49e1-bffb-759ddd2162e1",
+              "leftValue": "={{ $json.isPast }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -400,
+        224
+      ],
+      "id": "e99f3f15-6bd2-4461-9cdf-6280e63a68c4",
+      "name": "Filter2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q",
+          "mode": "list",
+          "cachedResultName": "Meetings",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1-MEkuqicZYj81gS-Q67CXleOPpjbWOc8uVaIBRnm59Q/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status_FU_1": "Done",
+            "Follow_UP 1": "={{ $('Global 2').first().json[\"Follow_UP 1\"] }}"
+          },
+          "matchingColumns": [
+            "Follow_UP 1"
+          ],
+          "schema": [
+            {
+              "id": "Lead_Email",
+              "displayName": "Lead_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Lead_Name",
+              "displayName": "Lead_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Lead_Message",
+              "displayName": "Lead_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "MeetingTime",
+              "displayName": "MeetingTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "MeetigLink",
+              "displayName": "MeetigLink",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Follow_UP 1",
+              "displayName": "Follow_UP 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status_FU_1",
+              "displayName": "Status_FU_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        320
+      ],
+      "id": "f8178b11-1d65-484a-8933-0734948d589a",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tYtDZQITx5nmAn8k",
+          "name": "FusionSync"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -16,
+        224
+      ],
+      "id": "13fa898e-ec5c-4460-91ff-bfa0e350cbc9",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2f7ac264-2f49-4ec0-8052-6778186d11eb",
+              "name": "Lead_Email",
+              "value": "={{ $json.Lead_Email }}",
+              "type": "string"
+            },
+            {
+              "id": "b3255919-5302-45cb-8184-6b4d7a191cc9",
+              "name": "Lead_Email",
+              "value": "={{ $json.Lead_Email }}",
+              "type": "string"
+            },
+            {
+              "id": "6350fa8e-8af7-45f3-9768-c3f9dc5d75aa",
+              "name": "Lead_Message",
+              "value": "={{ $json.Lead_Message }}",
+              "type": "string"
+            },
+            {
+              "id": "ff578348-1432-4c07-ab5d-816815d2a70b",
+              "name": "MeetingTime",
+              "value": "={{ $json.MeetingTime }}",
+              "type": "string"
+            },
+            {
+              "id": "0967d245-54c3-4c2f-907d-af91e602e8db",
+              "name": "Follow_UP 1",
+              "value": "={{ $json[\"Follow_UP 1\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "8bcfae7d-8bab-470e-aa9b-0f315b118337",
+              "name": "Lead_Name",
+              "value": "={{ $json.Lead_Name }}",
+              "type": "string"
+            },
+            {
+              "id": "8bb94b1a-bb5d-41b1-b552-f65420a92808",
+              "name": "MeetigLink",
+              "value": "={{ $json.MeetigLink }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        320
+      ],
+      "id": "744a6ac1-b65d-444e-8d16-d3c5b51b2b4c",
+      "name": "Global 2"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C08FRU6TCBX",
+          "mode": "list",
+          "cachedResultName": "meeting-updates"
+        },
+        "text": "=🚀 New Meeting Booked\n\n👤 Lead Name: {{ $json.Lead_Name }}\n📧 Email: {{ $json.Lead_Email }}\n\n💬 Notes:\n{{ $json.Lead_Message }}\n\n📅 Meeting Time:\n{{ DateTime.fromISO($json.MeetingTime).setZone('Asia/Kolkata').toFormat('dd MMM yyyy, hh a ZZZZ') }}\n\n🔗 Meeting Link:\n{{ $json.MeetigLink }}\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        448,
+        320
+      ],
+      "id": "33ecb8fa-1978-4d9e-bf9c-8dc08f140a2f",
+      "name": "Follow-ups",
+      "webhookId": "258a3dd6-9d95-4c58-912e-52729411c970",
+      "credentials": {
+        "slackApi": {
+          "id": "S8ADXNnJs6awlXZY",
+          "name": "SK Slack"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "connection": "upgrade",
+            "host": "n8n.fusionsync.ai",
+            "x-real-ip": "5.60.65.64",
+            "x-forwarded-for": "5.60.65.64",
+            "x-forwarded-proto": "https",
+            "content-length": "2901",
+            "content-type": "application/json",
+            "x-cal-signature-256": "no-secret-provided",
+            "x-cal-webhook-version": "2021-10-20",
+            "accept": "*/*",
+            "accept-language": "*",
+            "sec-fetch-mode": "cors",
+            "user-agent": "node",
+            "accept-encoding": "br, gzip, deflate"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "triggerEvent": "BOOKING_CREATED",
+            "createdAt": "2026-05-31T11:32:32.299Z",
+            "payload": {
+              "bookerUrl": "https://cal.com",
+              "title": "Lead Response Strategy Call between FusionSyncAI and FusionSyncAI",
+              "startTime": "2026-06-12T05:30:00.000Z",
+              "endTime": "2026-06-12T06:00:00.000Z",
+              "additionalNotes": "",
+              "type": "lead-response-strategy-call",
+              "description": "We’ll review your current lead flow, identify where leads are being missed or delayed, and show you how to automatically respond, qualify, and book more meetings.",
+              "eventTypeId": 3165521,
+              "hideCalendarNotes": false,
+              "hideCalendarEventDetails": false,
+              "hideOrganizerEmail": false,
+              "schedulingType": null,
+              "seatsPerTimeSlot": null,
+              "seatsShowAttendees": true,
+              "seatsShowAvailabilityCount": true,
+              "customReplyToEmail": null,
+              "disableRescheduling": false,
+              "disableReschedulingScope": "HOST_AND_ATTENDEE",
+              "disableCancelling": false,
+              "disableCancellingScope": "HOST_AND_ATTENDEE",
+              "organizer": {
+                "id": 1239692,
+                "name": "FusionSyncAI",
+                "email": "fusionsyncai@gmail.com",
+                "username": "fusionsyncai",
+                "timeZone": "Asia/Calcutta",
+                "language": {
+                  "locale": "en"
+                },
+                "timeFormat": "h:mma",
+                "utcOffset": 330
+              },
+              "attendees": [
+                {
+                  "name": "FusionSyncAI",
+                  "email": "fusionsyncai@gmail.com",
+                  "timeZone": "Asia/Calcutta",
+                  "language": {
+                    "locale": "en"
+                  },
+                  "phoneNumber": null,
+                  "bookingSeat": null,
+                  "utcOffset": 330,
+                  "firstName": "FusionSyncAI",
+                  "lastName": ""
+                }
+              ],
+              "customInputs": {},
+              "responses": {
+                "name": {
+                  "label": "your_name",
+                  "value": "FusionSyncAI"
+                },
+                "email": {
+                  "label": "email_address",
+                  "value": "fusionsyncai@gmail.com"
+                },
+                "guests": {
+                  "label": "guests",
+                  "value": []
+                },
+                "location": {
+                  "label": "location",
+                  "value": {
+                    "value": "integrations:google:meet",
+                    "optionValue": ""
+                  }
+                }
+              },
+              "userFieldsResponses": {},
+              "location": "integrations:google:meet",
+              "iCalUID": "sMbMR4FePTNunMSX4FaimC@Cal.com",
+              "iCalSequence": 0,
+              "requiresConfirmation": false,
+              "oneTimePassword": null,
+              "platformClientId": "",
+              "platformRescheduleUrl": "",
+              "platformCancelUrl": "",
+              "platformBookingUrl": "",
+              "uid": "sMbMR4FePTNunMSX4FaimC",
+              "organizationId": null,
+              "hashedLink": null,
+              "cancellationReason": null,
+              "rejectionReason": null,
+              "hideBranding": false,
+              "videoCallData": {
+                "type": "google_meet_video",
+                "id": "",
+                "password": "",
+                "url": "https://meet.google.com/rro-jdwr-gec"
+              },
+              "appsStatus": [
+                {
+                  "appName": "Google Calendar",
+                  "type": "google_calendar",
+                  "success": 1,
+                  "failures": 0,
+                  "errors": []
+                },
+                {
+                  "appName": "Google Meet",
+                  "type": "google_meet_video",
+                  "success": 1,
+                  "failures": 0,
+                  "errors": []
+                }
+              ],
+              "destinationCalendar": [
+                {
+                  "id": 364257,
+                  "integration": "google_calendar",
+                  "externalId": "fusionsyncai@gmail.com",
+                  "primaryEmail": "fusionsyncai@gmail.com",
+                  "userId": 1239692,
+                  "credentialId": 585840
+                }
+              ],
+              "bookingId": 20273488,
+              "status": "ACCEPTED",
+              "eventTitle": "Lead Response Strategy Call",
+              "eventDescription": "We’ll review your current lead flow, identify where leads are being missed or delayed, and show you how to automatically respond, qualify, and book more meetings.",
+              "price": 0,
+              "currency": "usd",
+              "length": 30,
+              "assignmentReason": [],
+              "metadata": {
+                "videoCallUrl": "https://meet.google.com/rro-jdwr-gec"
+              }
+            }
+          },
+          "webhookUrl": "https://n8n.fusionsync.ai/webhook/3165521-cal.com",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Send a message": [
+      {
+        "json": {
+          "ok": true,
+          "channel": "C08FRU6TCBX",
+          "message": {
+            "user": "U0B6LF13JQ0",
+            "type": "message",
+            "ts": "1780228183.403429",
+            "bot_id": "B0B5U1KLVAM",
+            "app_id": "A0B5U1943UH",
+            "text": ":rocket: New Meeting Booked\n\n:bust_in_silhouette: Lead Name: FusionSyncAI\n:e-mail: Email: <mailto:fusionsyncai@gmail.com|fusionsyncai@gmail.com>\n\n:speech_balloon: Notes:\nNo additional notes provided.\n\n:date: Meeting Time:\n12 Jun 2026, 11 AM GMT+5:30\n\n:link: Meeting Link:\n<https://meet.google.com/rro-jdwr-gec>\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.\n_Automated with this <https://n8n.fusionsync.ai/workflow/ja2jJNsYBXI37Dpt?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742|n8n workflow>_",
+            "team": "T08FRTKD81K",
+            "bot_profile": {
+              "id": "B0B5U1KLVAM",
+              "app_id": "A0B5U1943UH",
+              "user_id": "U0B6LF13JQ0",
+              "name": "FusionSync AI",
+              "icons": {
+                "image_36": "https://a.slack-edge.com/80588/img/plugins/app/bot_36.png",
+                "image_48": "https://a.slack-edge.com/80588/img/plugins/app/bot_48.png",
+                "image_72": "https://a.slack-edge.com/80588/img/plugins/app/service_72.png"
+              },
+              "deleted": false,
+              "updated": 1779537900,
+              "team_id": "T08FRTKD81K"
+            },
+            "blocks": [
+              {
+                "type": "rich_text",
+                "block_id": "ynKd",
+                "elements": [
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "emoji",
+                        "name": "rocket",
+                        "unicode": "1f680"
+                      },
+                      {
+                        "type": "text",
+                        "text": " New Meeting Booked\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "bust_in_silhouette",
+                        "unicode": "1f464"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Lead Name: FusionSyncAI\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "e-mail",
+                        "unicode": "1f4e7"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Email: "
+                      },
+                      {
+                        "type": "link",
+                        "url": "mailto:fusionsyncai@gmail.com",
+                        "text": "fusionsyncai@gmail.com"
+                      },
+                      {
+                        "type": "text",
+                        "text": "\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "speech_balloon",
+                        "unicode": "1f4ac"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Notes:\nNo additional notes provided.\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "date",
+                        "unicode": "1f4c5"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Meeting Time:\n12 Jun 2026, 11 AM GMT+5:30\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "link",
+                        "unicode": "1f517"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Meeting Link:\n"
+                      },
+                      {
+                        "type": "link",
+                        "url": "https://meet.google.com/rro-jdwr-gec"
+                      },
+                      {
+                        "type": "text",
+                        "text": "\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.\n"
+                      },
+                      {
+                        "type": "text",
+                        "text": "Automated with this ",
+                        "style": {
+                          "italic": true
+                        }
+                      },
+                      {
+                        "type": "link",
+                        "url": "https://n8n.fusionsync.ai/workflow/ja2jJNsYBXI37Dpt?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742",
+                        "text": "n8n workflow",
+                        "style": {
+                          "italic": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "message_timestamp": "1780228183.403429"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2026-06-01T08:45:34.010+05:30",
+          "Readable date": "June 1st 2026, 8:45:34 am",
+          "Readable time": "8:45:34 am",
+          "Day of week": "Monday",
+          "Year": "2026",
+          "Month": "June",
+          "Day of month": "01",
+          "Hour": "08",
+          "Minute": "45",
+          "Second": "34",
+          "Timezone": "Asia/Kolkata (UTC+05:30)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Follow-ups": [
+      {
+        "json": {
+          "ok": true,
+          "channel": "C08FRU6TCBX",
+          "message": {
+            "user": "U0B6LF13JQ0",
+            "type": "message",
+            "ts": "1780290106.336369",
+            "bot_id": "B0B5U1KLVAM",
+            "app_id": "A0B5U1943UH",
+            "text": ":rocket: New Meeting Booked\n\n:bust_in_silhouette: Lead Name: FusionSyncAI\n:e-mail: Email: <mailto:fusionsyncai@gmail.com|fusionsyncai@gmail.com>\n\n:speech_balloon: Notes:\n\n\n:date: Meeting Time:\n12 Jun 2026, 11 AM GMT+5:30\n\n:link: Meeting Link:\n<https://meet.google.com/rro-jdwr-gec>\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.\n_Automated with this <https://n8n.fusionsync.ai/workflow/ja2jJNsYBXI37Dpt?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742|n8n workflow>_",
+            "team": "T08FRTKD81K",
+            "bot_profile": {
+              "id": "B0B5U1KLVAM",
+              "app_id": "A0B5U1943UH",
+              "user_id": "U0B6LF13JQ0",
+              "name": "FusionSync AI",
+              "icons": {
+                "image_36": "https://a.slack-edge.com/80588/img/plugins/app/bot_36.png",
+                "image_48": "https://a.slack-edge.com/80588/img/plugins/app/bot_48.png",
+                "image_72": "https://a.slack-edge.com/80588/img/plugins/app/service_72.png"
+              },
+              "deleted": false,
+              "updated": 1779537900,
+              "team_id": "T08FRTKD81K"
+            },
+            "blocks": [
+              {
+                "type": "rich_text",
+                "block_id": "RLS",
+                "elements": [
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "emoji",
+                        "name": "rocket",
+                        "unicode": "1f680"
+                      },
+                      {
+                        "type": "text",
+                        "text": " New Meeting Booked\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "bust_in_silhouette",
+                        "unicode": "1f464"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Lead Name: FusionSyncAI\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "e-mail",
+                        "unicode": "1f4e7"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Email: "
+                      },
+                      {
+                        "type": "link",
+                        "url": "mailto:fusionsyncai@gmail.com",
+                        "text": "fusionsyncai@gmail.com"
+                      },
+                      {
+                        "type": "text",
+                        "text": "\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "speech_balloon",
+                        "unicode": "1f4ac"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Notes:\n\n\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "date",
+                        "unicode": "1f4c5"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Meeting Time:\n12 Jun 2026, 11 AM GMT+5:30\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "link",
+                        "unicode": "1f517"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Meeting Link:\n"
+                      },
+                      {
+                        "type": "link",
+                        "url": "https://meet.google.com/rro-jdwr-gec"
+                      },
+                      {
+                        "type": "text",
+                        "text": "\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.\n"
+                      },
+                      {
+                        "type": "text",
+                        "text": "Automated with this ",
+                        "style": {
+                          "italic": true
+                        }
+                      },
+                      {
+                        "type": "link",
+                        "url": "https://n8n.fusionsync.ai/workflow/ja2jJNsYBXI37Dpt?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742",
+                        "text": "n8n workflow",
+                        "style": {
+                          "italic": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "message_timestamp": "1780290106.336369"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "ok": true,
+          "channel": "C08FRU6TCBX",
+          "message": {
+            "user": "U0B6LF13JQ0",
+            "type": "message",
+            "ts": "1780290106.609839",
+            "bot_id": "B0B5U1KLVAM",
+            "app_id": "A0B5U1943UH",
+            "text": ":rocket: New Meeting Booked\n\n:bust_in_silhouette: Lead Name: FusionSyncAI\n:e-mail: Email: <mailto:fusionsyncai@gmail.com|fusionsyncai@gmail.com>\n\n:speech_balloon: Notes:\n\n\n:date: Meeting Time:\n12 Jun 2026, 11 AM GMT+5:30\n\n:link: Meeting Link:\n<https://meet.google.com/rro-jdwr-gec>\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.\n_Automated with this <https://n8n.fusionsync.ai/workflow/ja2jJNsYBXI37Dpt?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742|n8n workflow>_",
+            "team": "T08FRTKD81K",
+            "bot_profile": {
+              "id": "B0B5U1KLVAM",
+              "app_id": "A0B5U1943UH",
+              "user_id": "U0B6LF13JQ0",
+              "name": "FusionSync AI",
+              "icons": {
+                "image_36": "https://a.slack-edge.com/80588/img/plugins/app/bot_36.png",
+                "image_48": "https://a.slack-edge.com/80588/img/plugins/app/bot_48.png",
+                "image_72": "https://a.slack-edge.com/80588/img/plugins/app/service_72.png"
+              },
+              "deleted": false,
+              "updated": 1779537900,
+              "team_id": "T08FRTKD81K"
+            },
+            "blocks": [
+              {
+                "type": "rich_text",
+                "block_id": "0YWWl",
+                "elements": [
+                  {
+                    "type": "rich_text_section",
+                    "elements": [
+                      {
+                        "type": "emoji",
+                        "name": "rocket",
+                        "unicode": "1f680"
+                      },
+                      {
+                        "type": "text",
+                        "text": " New Meeting Booked\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "bust_in_silhouette",
+                        "unicode": "1f464"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Lead Name: FusionSyncAI\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "e-mail",
+                        "unicode": "1f4e7"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Email: "
+                      },
+                      {
+                        "type": "link",
+                        "url": "mailto:fusionsyncai@gmail.com",
+                        "text": "fusionsyncai@gmail.com"
+                      },
+                      {
+                        "type": "text",
+                        "text": "\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "speech_balloon",
+                        "unicode": "1f4ac"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Notes:\n\n\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "date",
+                        "unicode": "1f4c5"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Meeting Time:\n12 Jun 2026, 11 AM GMT+5:30\n\n"
+                      },
+                      {
+                        "type": "emoji",
+                        "name": "link",
+                        "unicode": "1f517"
+                      },
+                      {
+                        "type": "text",
+                        "text": " Meeting Link:\n"
+                      },
+                      {
+                        "type": "link",
+                        "url": "https://meet.google.com/rro-jdwr-gec"
+                      },
+                      {
+                        "type": "text",
+                        "text": "\n\n━━━━━━━━━━━━━━━━━━\nA new lead has successfully scheduled a meeting.\n"
+                      },
+                      {
+                        "type": "text",
+                        "text": "Automated with this ",
+                        "style": {
+                          "italic": true
+                        }
+                      },
+                      {
+                        "type": "link",
+                        "url": "https://n8n.fusionsync.ai/workflow/ja2jJNsYBXI37Dpt?utm_source=n8n-internal&amp;utm_medium=powered_by&amp;utm_campaign=n8n-nodes-base.slack_135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742",
+                        "text": "n8n workflow",
+                        "style": {
+                          "italic": true
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "message_timestamp": "1780290106.609839"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "GLOBAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GLOBAL": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Creating 3 Follow-Ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Creating 3 Follow-Ups": {
+      "main": [
+        [
+          {
+            "node": "Add_Meeting_In_Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Filter2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Global 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global 2": {
+      "main": [
+        [
+          {
+            "node": "Follow-ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-ups": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5829e1fa-c2f2-4c96-ba98-b0b2e563fcfc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742"
+  },
+  "id": "ja2jJNsYBXI37Dpt",
+  "tags": []
+}

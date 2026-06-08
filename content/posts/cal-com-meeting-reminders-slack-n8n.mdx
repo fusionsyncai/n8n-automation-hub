@@ -1,0 +1,234 @@
+---
+title: "Cal.com meeting reminders in Slack: nudge your team 3 times before every booking"
+description: "Build an n8n workflow that catches every Cal.com booking, logs it to Google Sheets, and pings Slack 1.5h, 1h, and 30 min before the call so no lead goes unattended."
+slug: "cal-com-meeting-reminders-slack-n8n"
+publishedAt: "2026-06-05"
+updatedAt: "2026-06-05"
+author: "n8n-hub-team"
+category: "slack-automation"
+contentType: implementation
+tags: ["n8n", "Cal.com", "Slack", "Google Sheets", "sales", "reminders"]
+featured: false
+draft: false
+---
+
+A booked meeting is only useful if someone actually shows up prepared. The failure mode is boring and expensive: a lead books a call, the confirmation email gets buried, and 30 minutes before the meeting nobody on your side remembers it exists. The lead joins an empty room, or your AE scrambles in with zero context.
+
+This guide builds the fix in n8n. Every Cal.com booking gets logged to a sheet, your team gets an instant "new booking" ping, and then Slack nudges them again **1.5 hours, 1 hour, and 30 minutes** before the call. By the time the meeting starts, it has been impossible to forget.
+
+## Available resources
+
+This build uses two assets you will set up below:
+
+1. **n8n workflow** "Meeting Follow-up On Slack" (the capture flow plus the reminder scheduler).
+2. **Google Sheet** "Meetings" (the reminder queue and audit log).
+
+<WorkflowDownload
+  file="/workflows/cal-com-meeting-reminders-slack-n8n.json"
+  title="Meeting Follow-up On Slack"
+/>
+
+## What you'll need
+
+Before you begin, make sure you have:
+
+1. An **n8n account** (cloud or self-hosted) with the workflow editor.
+2. A **Cal.com account** with admin access to the event type you want to track, so you can add a webhook.
+3. A **Slack workspace** with a channel for the alerts (this guide uses `#meeting-updates`) and an n8n Slack credential allowed to post to it.
+4. A **Google account** with a sheet n8n can read and write via a Google Sheets OAuth credential.
+
+## Overview of the automation
+
+The automation runs in two phases, sharing one Google Sheet:
+
+1. **Capture.** A Cal.com webhook fires on every new booking. n8n posts a "new meeting booked" message to Slack and writes three reminder rows to the sheet, one per follow-up time.
+2. **Remind.** A scheduler runs every 15 minutes, finds reminders whose time has passed and are still `Pending`, posts them to Slack, and marks them `Done`.
+
+<WorkflowDiagram caption="Booking is captured once; reminders fire on a clock from the sheet.">
+  <WorkflowStep node="Cal.com" via="webhook" detail="Booking Created event for one specific event type." />
+  <WorkflowStep node="n8n (capture)" detail="Normalize the payload, post the booking to Slack, write 3 reminder rows." />
+  <WorkflowStep node="Google Sheets" detail="One row per reminder: due time + Pending/Done status." />
+  <WorkflowStep node="n8n (scheduler)" via="every 15 min" detail="Read Pending rows, keep the ones now due, send, mark Done." />
+  <WorkflowOutput>Slack: instant booking alert + 3 timed reminders</WorkflowOutput>
+  <WorkflowOutput>Google Sheets: reminder queue and audit log</WorkflowOutput>
+</WorkflowDiagram>
+
+Splitting capture from delivery is the important design decision. The booking happens once; the reminders need to fire on a clock. Doing both in one trigger-driven flow is how people end up abusing `Wait` nodes that silently die on a server restart.
+
+## Step-by-step setup
+
+### 1. Set up the Google Sheet
+
+Create a sheet (the example names it "Meetings") with these **exact** column headers:
+
+```text
+Lead_Email | Lead_Name | Lead_Message | MeetingTime | MeetigLink | Follow_UP 1 | Status_FU_1
+```
+
+<Callout variant="tip" title="Match the headers exactly, typos and all">
+Google Sheets nodes match on the literal header text, including the typo `MeetigLink` and the space in `Follow_UP 1`. Pick your names once and keep them identical across every node, or the column mapping silently writes to the wrong place.
+</Callout>
+
+### 2. Set up the Slack channel
+
+Create the channel that will receive everything (the example uses `#meeting-updates`) and connect a Slack credential in n8n with permission to post there. You will reference this same channel in both the booking message and the reminder message.
+
+### 3. Set up the Cal.com webhook
+
+In Cal.com, add a webhook on the event type you want to track:
+
+1. Subscribe to the **Booking Created** trigger.
+2. Set the URL to your n8n `Webhook` node URL.
+3. Save, then send a test booking so you have a real payload to map against.
+
+### 4. Build the capture workflow
+
+**Receive the webhook.** Add a `Webhook` node (`POST`). Cal.com sends a large payload; pull only the useful fields into clean names with a `Set` node named `GLOBAL`:
+
+```js
+bookingId        = {{ $json.body.payload.bookingId }}
+name             = {{ $json.body.payload.responses.name.value }}
+email            = {{ $json.body.payload.responses.email.value }}
+title            = {{ $json.body.payload.title }}
+startTime        = {{ $json.body.payload.startTime }}
+additionalNotes  = {{ $json.body.payload.additionalNotes }}
+eventTypeId      = {{ $json.body.payload.eventTypeId }}
+videoCallUrl     = {{ $json.body.payload.metadata.videoCallUrl }}
+triggerEvent     = {{ $json.body.triggerEvent }}
+```
+
+Naming this node `GLOBAL` matters later: the follow-up code node reaches back to it by name to read `startTime`.
+
+**Filter to the right event.** Cal.com also fires webhooks for reschedules and cancellations. A `Filter` node keeps only fresh bookings:
+
+```text
+{{ $json.triggerEvent }}  equals  BOOKING_CREATED
+```
+
+**Announce the booking in Slack.** A Slack node (`Send Message`) posts the first notification (not a reminder, just "a lead booked a call"), formatted for humans:
+
+```text
+🚀 New Meeting Booked
+
+👤 Lead Name: {{ $json.name }}
+📧 Email: {{ $json.email }}
+
+💬 Notes:
+{{ $json.additionalNotes || 'No additional notes provided.' }}
+
+📅 Meeting Time:
+{{ DateTime.fromISO($json.startTime).setZone('Asia/Kolkata').toFormat('dd MMM yyyy, hh a ZZZZ') }}
+
+🔗 Meeting Link:
+{{ $json.videoCallUrl }}
+```
+
+The `DateTime.fromISO(...).setZone(...)` conversion is doing real work. Cal.com sends UTC; your team thinks in their local timezone. Convert once here so nobody does mental arithmetic at 30 minutes' notice.
+
+**Generate the three follow-up times.** A `Code` node reads the booking start time and returns **three items**, one per reminder:
+
+```js
+const item = $('GLOBAL').first().json;
+
+const meetingTime = new Date(item.startTime);
+
+const followUp1 = new Date(meetingTime);
+followUp1.setUTCMinutes(followUp1.getUTCMinutes() - 90); // 1.5 hours
+
+const followUp2 = new Date(meetingTime);
+followUp2.setUTCMinutes(followUp2.getUTCMinutes() - 60); // 1 hour
+
+const followUp3 = new Date(meetingTime);
+followUp3.setUTCMinutes(followUp3.getUTCMinutes() - 30); // 30 min
+
+return [
+  { json: { ...item, Follow_Up_Number: 1, Follow_Up_Time: followUp1.toISOString(), Status: 'Pending' } },
+  { json: { ...item, Follow_Up_Number: 2, Follow_Up_Time: followUp2.toISOString(), Status: 'Pending' } },
+  { json: { ...item, Follow_Up_Number: 3, Follow_Up_Time: followUp3.toISOString(), Status: 'Pending' } },
+];
+```
+
+The mental model worth internalizing: **one meeting becomes three rows**, each carrying its own due time and status. You are not storing one meeting with three columns; you are storing three independent reminders that share a lead. That makes the scheduler trivially simple: it never has to know "which reminder is this," it just asks "is this row due yet?"
+
+**Write the reminders to the sheet.** A Google Sheets node (`Append`) writes each item as a row:
+
+```text
+Lead_Name   = {{ $json.name }}
+Lead_Email  = {{ $json.email }}
+Lead_Message= {{ $json.additionalNotes }}
+MeetingTime = {{ $json.startTime }}
+MeetigLink  = {{ $json.videoCallUrl }}
+Follow_UP 1 = {{ DateTime.fromISO($json.Follow_Up_Time).toISO() }}
+Status_FU_1 = Pending
+```
+
+After a booking, the sheet has three `Pending` rows for that lead at 90, 60, and 30 minutes before the meeting. The capture flow is done; it never thinks about timing again.
+
+### 5. Build the reminder workflow
+
+**Poll on a schedule.** A `Schedule Trigger` runs every **15 minutes**. That is your reminder resolution: a follow-up fires within 15 minutes of its scheduled time, which is fine for these nudges. There is no `Wait` node holding state, so polling more often just costs a few extra sheet reads.
+
+**Pull the pending reminders.** A Google Sheets node (`Get Rows`) filtered to `Status_FU_1 = Pending` returns every unsent reminder across all leads, not just the latest one.
+
+**Decide what is due.** A `Code` node stamps each row with whether its time has arrived:
+
+```js
+const now = new Date().getTime();
+
+return $input.all().map(item => {
+  const followUpTime = new Date(item.json['Follow_UP 1']).getTime();
+  return {
+    json: {
+      ...item.json,
+      row: item.json.row_number,
+      isPending: item.json['Status_FU_1'] === 'Pending',
+      isPast: followUpTime <= now,
+      diff_minutes: Math.round((now - followUpTime) / 60000),
+    },
+  };
+});
+```
+
+A `Filter` node then keeps only rows where `isPast` is `true`.
+
+**Send and mark done, in a loop.** Run the due rows through a `Loop Over Items` (split in batches). For each one:
+
+1. A `Set` node re-flattens the row into clean names (`Lead_Name`, `Lead_Email`, `MeetingTime`, `MeetigLink`, `Follow_UP 1`).
+2. A Slack node posts the reminder into the same channel, reusing the booking message format.
+3. A Google Sheets node (`Update`) sets `Status_FU_1 = Done`, matching on the `Follow_UP 1` value so it updates the exact row that just fired.
+
+<Callout variant="warning" title="Mark Done in the same loop iteration that sends">
+If you send first and batch the status updates afterward, a mid-run failure leaves reminders marked `Pending` that already went out, and the next poll sends them again. Update the row immediately after the Slack post inside the loop. Send, then mark, then move on.
+</Callout>
+
+## Testing the workflow
+
+Validate it end to end before trusting it with real leads:
+
+1. **Fire a booking.** Create a test booking on your Cal.com event type. Confirm the `#meeting-updates` channel gets the "New Meeting Booked" message within seconds.
+2. **Check the sheet.** Confirm three new rows appeared for that lead, all `Pending`, with `Follow_UP 1` times at 90, 60, and 30 minutes before the meeting.
+3. **Force a due reminder.** Edit one row's `Follow_UP 1` to a time in the past, then either wait for the 15-minute schedule or run the reminder workflow manually.
+4. **Confirm delivery and status.** That reminder should post to Slack, and its `Status_FU_1` should flip to `Done`. Run it again and confirm the same row does **not** fire twice.
+
+If a reminder fires twice, your `Update` step is not matching the right row. Check that `Follow_UP 1` values are unique enough to match on, or switch the match to the sheet's row number.
+
+## Customization options
+
+- **Change the timings.** Edit the three `setUTCMinutes(... - N)` lines in the follow-up code node to whatever cadence you want (for example 24h, 2h, 15min).
+- **Route by event type.** Use `eventTypeId` to send different event types to different Slack channels with a small lookup, so demos and discovery calls do not land in the same place.
+- **Tag the assignee.** Pull the owner from a rota sheet and add a Slack mention to the reminder so a specific person is on the hook.
+- **Tighten resolution.** Drop the schedule to every 5 minutes if you want reminders closer to their exact target time.
+- **Add a cancel guard.** Subscribe to Cal.com's cancellation webhook and mark the matching rows `Done` (or `Cancelled`) so reminders stop for meetings that no longer exist.
+
+## Common mistakes that quietly break this
+
+- **One row per meeting instead of one per reminder.** Three status columns force branching logic into the scheduler. One row per reminder collapses everything into a single "is it past and pending?" check.
+- **Leaning on `Wait` nodes for timing.** A booking made a week out means an execution sitting open for seven days, vulnerable to restarts and timeouts. The sheet-plus-scheduler pattern keeps state in the sheet, so it survives all of that.
+- **Forgetting the timezone conversion.** Cal.com timestamps are UTC. Post them raw and your team reads "05:30" for an 11:00 AM IST call. Convert in the Slack message.
+- **Not filtering the trigger event.** Without the `BOOKING_CREATED` filter, reschedules and cancellations also create reminders for meetings that no longer exist.
+
+<InlineCta />
+
+## Conclusion
+
+You now have a booking pipeline that refuses to let a meeting approach quietly: an instant Slack alert when a lead books, three escalating reminders before the call, and a Google Sheet that doubles as an audit log of every nudge. Wire the capture flow to your Cal.com event type, point the scheduler at the same sheet, and the next booking that lands will announce itself, then keep nudging right up until the call begins.
