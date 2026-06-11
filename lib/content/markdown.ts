@@ -1,6 +1,6 @@
 import "server-only";
 import { ctaVariantForContentType } from "@/components/mdx/cta-block";
-import { siteConfig } from "@/lib/site-config";
+import { absoluteUrl, siteConfig } from "@/lib/site-config";
 import type { Post } from "@/lib/content/schema";
 
 export function markdownUrlForPost(slug: string): string {
@@ -60,6 +60,10 @@ function normalizeMdxToMarkdown(source: string): string {
       `${siteConfig.parent.name} builds workflows like this one end-to-end.\n\n[Hire ${siteConfig.parent.name}](${siteConfig.agency.contactUrl})`,
     )
     .replace(/<CtaBlock\b[\s\S]*?\/>/g, "")
+    .replace(
+      /<WorkflowDownload\b[\s\S]*?\/>/g,
+      (match) => workflowDownloadToMarkdown(match),
+    )
     .replace(/<\/?[A-Z][A-Za-z0-9]*(?:\s+[^>]*)?>/g, "")
     .replace(/\{["']\s*["']\}/g, " ")
     .replace(/\{`([^`]+)`\}/g, "$1")
@@ -70,6 +74,16 @@ function normalizeMdxToMarkdown(source: string): string {
     .map((line) => decodeHtmlEntities(line).trimEnd())
     .join("\n")
     .trim();
+}
+
+function workflowDownloadToMarkdown(tag: string): string {
+  const file = tag.match(/\bfile=["']([^"']+)["']/)?.[1];
+  if (!file) return "";
+  const title = tag.match(/\btitle=["']([^"']+)["']/)?.[1];
+  const label = title
+    ? `Download workflow JSON: ${title}`
+    : "Download workflow JSON";
+  return `[${label}](${absoluteUrl(file)})`;
 }
 
 function blockquote(markdown: string): string {

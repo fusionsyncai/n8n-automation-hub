@@ -1,0 +1,182 @@
+---
+title: "Automate LinkedIn posts with n8n: AI agents that research, write, and publish on approval"
+description: "Build an n8n pipeline that researches a topic, drafts a LinkedIn post in two competing styles, generates an image brief, and publishes to LinkedIn only after you approve it in Airtable."
+slug: "linkedin-post-automation-ai-agents-n8n"
+publishedAt: "2026-06-05"
+updatedAt: "2026-06-05"
+author: "n8n-hub-team"
+category: "ai-agents-automation"
+contentType: implementation
+tags: ["n8n", "LinkedIn", "AI agents", "Airtable", "Gemini", "content"]
+featured: false
+draft: false
+---
+
+Posting consistently on LinkedIn is a content-supply problem, not a willpower problem. The blank page wins because researching a topic, writing it in a voice that does not sound like a press release, and shipping it on a schedule is real work. Most "AI post generators" solve the wrong half: they spray generic text with zero research and zero human gate, and your feed starts to read like everyone else's.
+
+This guide builds the version that actually holds up. You approve a topic, AI agents research it with live search, two different copywriters draft competing versions, an image brief gets generated, and the draft lands in Airtable for review. Nothing publishes to LinkedIn until a human flips a status to **Approved**. Speed with a gate.
+
+## Available resources
+
+This build uses two assets you will set up below:
+
+1. **n8n workflow** "LinkedIn - Post Automation" (research + drafting + publishing).
+2. **Airtable base** "Linkedin Post Automation" with two tables: **Topics** and **LinkedIn Posts**.
+
+<WorkflowDownload
+  file="/workflows/linkedin-post-automation-ai-agents-n8n.json"
+  title="LinkedIn - Post Automation"
+/>
+
+## What you'll need
+
+Before you begin, make sure you have:
+
+1. An **n8n account** (cloud or self-hosted) with the workflow editor.
+2. An **Airtable account** to manage the Topics and LinkedIn Posts tables.
+3. A **Google Gemini API key** for the research and writing agents (any LLM works; this build uses Gemini).
+4. A **SerpApi key** so the research agent can search the live web.
+5. **LinkedIn API access** (a connected LinkedIn page or profile credential in n8n) to publish.
+
+## Overview of the automation
+
+The automation runs in two phases that share one Airtable base. A human approval sits between them.
+
+1. **Draft creation.** Approving a topic triggers a research agent, then one of two copywriting agents (chosen at random), then an image-brief agent. The finished draft is written to the LinkedIn Posts table as `Ready For Review`.
+2. **Publishing.** Approving a draft triggers the LinkedIn node to publish the post, then flips its status to `Posted`.
+
+<WorkflowDiagram caption="Two trigger-driven phases with a human approval gate in Airtable between them.">
+  <WorkflowStep node="Airtable: Topics" via="status = Approved" detail="Trigger fires only when you approve a topic row." />
+  <WorkflowStep node="Topic Research Agent" detail="Gemini + SerpApi search + Think tool. Outputs Idea, Description, Significance, Implementation." />
+  <WorkflowStep node="Switch (random 1 or 2)" detail="Routes to one of two copywriting styles so drafts do not all sound the same." />
+  <WorkflowStep node="POV agent / PAS agent" detail="Point-of-View or Problem-Agitate-Solution draft of the post." />
+  <WorkflowStep node="Image Description agent" detail="Turns the post into a structured image brief for generation." />
+  <WorkflowStep node="Airtable: LinkedIn Posts" via="status = Ready For Review" detail="Draft + image brief written for human review." />
+  <WorkflowStep node="LinkedIn" via="status = Approved" detail="Publish on approval, then mark the row Posted." />
+  <WorkflowOutput>LinkedIn: published post (only after approval)</WorkflowOutput>
+  <WorkflowOutput>Airtable: full audit trail of topics, drafts, and statuses</WorkflowOutput>
+</WorkflowDiagram>
+
+The important design decision is the **approval gate between phases**. Research and drafting are cheap and reversible. Publishing to a company page is neither. Keeping them in separate trigger-driven flows means a bad draft dies quietly in Airtable instead of going live.
+
+## Step-by-step setup
+
+### 1. Set up the Airtable base
+
+Create a base (the example names it "Linkedin Post Automation") with two tables.
+
+**Topics** drives phase one:
+
+```text
+Topics       (single line text)   the headline idea
+Discription  (long text)          context for the research agent
+Status       (single select)      Approved, Researched, Decline
+```
+
+**LinkedIn Posts** holds the generated drafts and drives phase two:
+
+```text
+LinkedIn Post      (long text)      the generated post body
+Image Description  (long text)      the structured image brief
+Status             (single select)  Ready For Review, Approved, Posted, Decline
+```
+
+<Callout variant="tip" title="Match field names to the workflow exactly">
+The Airtable nodes reference fields by their literal names, including the misspelled `Discription`. If you rename a field, update every node that maps to it, or the expression returns empty.
+</Callout>
+
+### 2. Connect credentials in n8n
+
+Add four credentials so the agents and publishing node can authenticate:
+
+1. **Airtable** (personal access token) with read and write on the base.
+2. **Google Gemini** for the chat models behind every agent.
+3. **SerpApi** for the research agent's `Search Tool`.
+4. **LinkedIn** for the page or profile you publish from.
+
+### 3. Build phase one: research and draft
+
+**Trigger on an approved topic.** An `Airtable Trigger` watches the Topics table. A `Filter` node (`Status = Approved`) lets only approved rows through, so you stay in control of what gets researched.
+
+**Research the topic.** The `Topic Research Agent` runs on Gemini with two tools wired in: a `Search Tool` (SerpApi) for live information and a `Think` tool for reasoning. A `Structured Output Parser` (wrapped in an `Auto-fixing Output Parser`) forces clean JSON:
+
+```json
+{
+  "Idea": "",
+  "Description": "",
+  "Significance": "",
+  "Implementation": ""
+}
+```
+
+The auto-fixing wrapper matters: LLMs occasionally return slightly malformed JSON, and it re-prompts the model to repair the output instead of failing the run.
+
+**Pick a writing style at random.** A `Code` node returns a random 1 or 2, and a `Switch` routes to one of two copywriting agents:
+
+```js
+function getRandomNumber() {
+  const randomNum = Math.floor(Math.random() * 2) + 1;
+  return [{ json: { randomNumber: randomNum } }];
+}
+return getRandomNumber();
+```
+
+- **Point of View agent**: a conviction-led, conversational take that opens with a strong statement.
+- **PAS agent**: the Problem, Agitate, Solution framework for higher-engagement posts.
+
+Randomizing the style stops your feed from falling into one repetitive template. Both agents receive the same research input:
+
+```text
+Idea: {{ $('Topic Research Agent').item.json.output.Idea }}
+Description: {{ $('Topic Research Agent').item.json.output.Description }}
+Significance: {{ $('Topic Research Agent').item.json.output.Significance }}
+Implications: {{ $('Topic Research Agent').item.json.output.Implementation }}
+```
+
+**Merge and generate an image brief.** A `Merge` node collapses the two possible branches back to one (only the chosen branch carries data). The `Image Description` agent then converts the finished post into a structured visual brief (main scene, key elements, style, colors, what to avoid) ready for any image generator.
+
+**Write the draft to Airtable.** A `Create Record` in LinkedIn Posts stores the post body and image brief with `Status = Ready For Review`, and an `Update record` marks the source topic `Researched` so it is not picked up again.
+
+### 4. Build phase two: review and publish
+
+**Trigger on an approved draft.** A second `Airtable Trigger` watches the LinkedIn Posts table, and a `Filter` (`Status = Approved`) only proceeds once a human has reviewed the draft and flipped the status.
+
+**Publish to LinkedIn.** The `LinkedIn` node posts the approved text:
+
+```text
+{{ $json.fields['LinkedIn Post'] }}
+```
+
+**Close the loop.** An `Update record` sets the row to `Posted`, so your Airtable becomes a clean history of what shipped and what was declined.
+
+## Testing the workflow
+
+Validate each phase before trusting it with your real page:
+
+1. **Approve a topic.** Add a row to Topics with an idea and description, set `Status = Approved`, and wait. Within a minute or two a new row should appear in LinkedIn Posts.
+2. **Read the draft.** Confirm the `LinkedIn Post` field has a researched, on-voice post and the `Image Description` field has a structured brief. Run it a few times to see both the POV and PAS styles appear.
+3. **Approve the draft.** Set the LinkedIn Posts row to `Status = Approved`.
+4. **Confirm it published.** Check that the post is live on LinkedIn and the row flipped to `Posted`. Decline a draft instead and confirm nothing publishes.
+
+If a draft never appears, check the research agent's output parser first: a malformed JSON response is the most common failure point, which is exactly why the auto-fixing parser is wired in.
+
+## Customization options
+
+- **Swap the model.** Replace Gemini with OpenAI, Anthropic, or any chat model n8n supports. The agents and parsers stay the same.
+- **Add more writing styles.** Extend the `Switch` to three or four branches (storytelling, listicle, contrarian) and widen the random range in the `Code` node.
+- **Auto-generate the image.** Feed the `Image Description` brief into an image model and attach the result to the LinkedIn post instead of stopping at the brief.
+- **Route approvals through Slack.** Post the draft to a Slack channel with Approve and Decline buttons instead of editing Airtable by hand.
+- **Schedule publishing.** Add a delay or a scheduled queue so approved posts go out at peak engagement times rather than immediately.
+
+## Common mistakes that quietly break this
+
+- **No human gate before publishing.** Wiring the LinkedIn node straight off the writing agent means one hallucinated claim goes live on your company page. Keep the approval filter.
+- **Skipping the auto-fixing parser.** A raw structured parser fails the whole run on the first malformed JSON. The auto-fixing wrapper repairs and retries.
+- **Renaming Airtable fields without updating nodes.** Expressions reference field names literally (including `Discription`); a rename silently returns empty values.
+- **Letting the agent write without search.** Without the SerpApi `Search Tool`, the research agent invents specifics. Live search is what keeps posts current and credible.
+
+<InlineCta />
+
+## Conclusion
+
+You now have a LinkedIn content engine that does the heavy lifting (research, drafting in two voices, and an image brief) while keeping a human firmly in charge of what actually publishes. Approve a topic and a reviewable draft appears in Airtable; approve the draft and it goes live, with every step logged. Feed it a steady list of topics and the blank page stops being the reason you went quiet.

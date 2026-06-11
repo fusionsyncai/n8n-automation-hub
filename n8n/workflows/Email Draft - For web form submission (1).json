@@ -1,0 +1,1173 @@
+{
+  "name": "Email Draft - For web form submission",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Capture Website Leads",
+        "formDescription": "This form Will Capture Website Lead Automatically",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name"
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Message"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -896,
+        16
+      ],
+      "id": "fc1d5661-358d-46a7-b116-2ef1c5731b7c",
+      "name": "Lead Form Trigger",
+      "webhookId": "9484cac5-ca16-4e51-a009-6fc5053a89f9"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk",
+          "mode": "list",
+          "cachedResultName": "Web-Submission To Email Draft In Slack",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead_Name": "={{ $json.Name }}",
+            "Lead_Email": "={{ $json.Email }}",
+            "Lead_Message": "={{ $json.Message }}",
+            "Created_At": "={{ $json.submittedAt.toDateTime().format('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Lead_Name",
+              "displayName": "Lead_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead_Email",
+              "displayName": "Lead_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead_Message",
+              "displayName": "Lead_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AI_Draft",
+              "displayName": "AI_Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send_Status",
+              "displayName": "Send_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -688,
+        16
+      ],
+      "id": "683a0d00-c9c6-41b6-b54b-4a8cbce06abd",
+      "name": "Save Lead to Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "c7NQ8ucxBVwUr4Ye",
+          "name": "Harsh Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B810XN7KM",
+          "mode": "list",
+          "cachedResultName": "email-drafts"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": {{ JSON.stringify($json.output) }}\n      }\n    },\n    {\n      \"type\": \"actions\",\n      \"elements\": [\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"✅ Approve & Send\"\n          },\n          \"value\": \"approve\",\n          \"action_id\": \"email_approve\"\n        },\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"✏️ Rewrite\"\n          },\n          \"value\": \"rewrite\",\n          \"action_id\": \"email_rewrite\"\n        }\n      ]\n    }\n  ]\n}",
+        "text": "=New email draft awaiting review and approval.",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{$now.toSeconds()}}",
+              "reply_broadcast": true
+            }
+          },
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        80,
+        16
+      ],
+      "id": "87a0b17f-2307-4c09-b2c2-cf483ed6fa16",
+      "name": "Post Draft to Slack",
+      "webhookId": "713aba1f-b2ec-4935-bf3b-add1844b889f",
+      "credentials": {
+        "slackApi": {
+          "id": "cfGTI3Flp1OcwCcd",
+          "name": "Harsh Slack Agents"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-rdkd",
+        "options": {
+          "noResponseBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -912,
+        592
+      ],
+      "id": "7fead5c2-99fb-4e69-8f73-ecf586b681a2",
+      "name": "Slack Interaction Webhook",
+      "webhookId": "73b2783e-8fd4-47b5-81da-0bdddc7298f6"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.body.payload;\nconst payload = typeof raw === 'string' ? JSON.parse(raw) : raw;\n\nif (payload.type === 'block_actions') {\n  const action = payload.actions[0];\n  const emailBlock = payload.message.blocks[0];\n  const fullEmailText = emailBlock.text.text;\n  const lines = fullEmailText.split('\\n');\n  const subjectLine = lines[0].replace('Subject: ', '').trim();\n  const bodyStartIndex = fullEmailText.indexOf('\\n\\n') + 2;\n  const emailBody = fullEmailText.substring(bodyStartIndex).trim();\n\n  return {\n    json: {\n      event_type: action.value,\n      action_id: action.action_id,\n      value: action.value,\n      user: payload.user.name,\n      user_id: payload.user.id,\n      channel: payload.channel.name,\n      channel_id: payload.channel.id,\n      message_ts: payload.message.ts,\n      trigger_id: payload.trigger_id,\n      response_url: payload.response_url,\n      email_subject: subjectLine,\n      email_body: emailBody,\n      full_email_text: fullEmailText\n    }\n  };\n}\n\nif (payload.type === 'view_submission') {\n  const metadata = JSON.parse(payload.view.private_metadata);\n  const feedback = payload.view.state.values.feedback_block.feedback_input.value;\n\n  return {\n    json: {\n      event_type: 'view_submission',\n      feedback,\n      prev_email: metadata.prev_email,\n      message_ts: metadata.message_ts,\n      user_id: payload.user.id\n    }\n  };\n}\n\nthrow new Error(`Unsupported Slack payload type: ${payload.type}`);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        592
+      ],
+      "id": "d975bc95-e54f-436c-a8c3-7b254640d8af",
+      "name": "Parse Slack Payload"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk",
+          "mode": "list",
+          "cachedResultName": "Web-Submission To Email Draft In Slack",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Message_Id": "={{ $json.message.ts.split('.')[0] }}",
+            "Lead_Email": "={{ $('Save Lead to Sheet').item.json.Lead_Email }}",
+            "Created_At": "={{ $('Save Lead to Sheet').item.json.Created_At }}"
+          },
+          "matchingColumns": [
+            "Created_At"
+          ],
+          "schema": [
+            {
+              "id": "Lead_Name",
+              "displayName": "Lead_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Lead_Email",
+              "displayName": "Lead_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead_Message",
+              "displayName": "Lead_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "AI_Draft",
+              "displayName": "AI_Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send_Status",
+              "displayName": "Send_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Message_Id",
+              "displayName": "Message_Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        352,
+        16
+      ],
+      "id": "8563d279-9f49-4724-8fe4-a9af334d2c98",
+      "name": "Save Message ID",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "c7NQ8ucxBVwUr4Ye",
+          "name": "Harsh Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk",
+          "mode": "list",
+          "cachedResultName": "Web-Submission To Email Draft In Slack",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Message_Id",
+              "lookupValue": "={{ $('Parse Slack Payload').item.json.message_ts.split('.')[0] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -96,
+        448
+      ],
+      "id": "38acedf2-f667-4698-8252-36b2109e601e",
+      "name": "Lookup Lead (Approve)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "c7NQ8ucxBVwUr4Ye",
+          "name": "Harsh Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Parse Slack Payload').item.json.email_subject }}",
+        "message": "={{ $('Parse Slack Payload').item.json.email_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        448
+      ],
+      "id": "4775f290-5224-465c-801d-fbb0cddc5959",
+      "name": "Create Gmail Draft",
+      "webhookId": "0676cdbc-eefb-4966-91d0-9c658945c23e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3GCa77rU7PHNlpkP",
+          "name": "Harsh Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk",
+          "mode": "list",
+          "cachedResultName": "Web-Submission To Email Draft In Slack",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Created_At": "={{ $json.Created_At }}",
+            "AI_Draft": "={{ $('Parse Slack Payload').item.json.full_email_text }}",
+            "Send_Status": "Send"
+          },
+          "matchingColumns": [
+            "Created_At"
+          ],
+          "schema": [
+            {
+              "id": "Lead_Name",
+              "displayName": "Lead_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Lead_Email",
+              "displayName": "Lead_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Lead_Message",
+              "displayName": "Lead_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "AI_Draft",
+              "displayName": "AI_Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send_Status",
+              "displayName": "Send_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message_Id",
+              "displayName": "Message_Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        448
+      ],
+      "id": "723873ea-645b-46fb-8a5d-f4099d7021d7",
+      "name": "Save Approved Draft",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "c7NQ8ucxBVwUr4Ye",
+          "name": "Harsh Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B810XN7KM",
+          "mode": "list",
+          "cachedResultName": "email-drafts"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": {{ JSON.stringify($json.output) }}\n      }\n    },\n    {\n      \"type\": \"actions\",\n      \"elements\": [\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"✅ Approve & Send\"\n          },\n          \"value\": \"approve\",\n          \"action_id\": \"email_approve\"\n        },\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"✏️ Rewrite\"\n          },\n          \"value\": \"rewrite\",\n          \"action_id\": \"email_rewrite\"\n        }\n      ]\n    }\n  ]\n}",
+        "text": "=New email draft awaiting review and approval.",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        80,
+        192
+      ],
+      "id": "e7f55f75-b436-410f-9327-f6bb572a3325",
+      "name": "Repost Rewritten Draft",
+      "webhookId": "713aba1f-b2ec-4935-bf3b-add1844b889f",
+      "credentials": {
+        "slackApi": {
+          "id": "cfGTI3Flp1OcwCcd",
+          "name": "Harsh Slack Agents"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk",
+          "mode": "list",
+          "cachedResultName": "Web-Submission To Email Draft In Slack",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Message_Id",
+              "lookupValue": "={{ $('Parse Slack Payload').item.json.message_ts.split('.')[0] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        304,
+        192
+      ],
+      "id": "0ee83cdc-55d6-4a83-8312-9fbcd0559905",
+      "name": "Lookup Lead (Rewrite)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "c7NQ8ucxBVwUr4Ye",
+          "name": "Harsh Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk",
+          "mode": "list",
+          "cachedResultName": "Web-Submission To Email Draft In Slack",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Rx4zxSbj-qjChQTh4NT0gEwvhrqbs-ebvnqEv4FDINk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Created_At": "={{ $json.Created_At }}",
+            "Message_Id": "={{ $('Repost Rewritten Draft').item.json.message.ts.split('.')[0] }}"
+          },
+          "matchingColumns": [
+            "Created_At"
+          ],
+          "schema": [
+            {
+              "id": "Lead_Name",
+              "displayName": "Lead_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Lead_Email",
+              "displayName": "Lead_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Lead_Message",
+              "displayName": "Lead_Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "AI_Draft",
+              "displayName": "AI_Draft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Created_At",
+              "displayName": "Created_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Send_Status",
+              "displayName": "Send_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Message_Id",
+              "displayName": "Message_Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        512,
+        192
+      ],
+      "id": "2d540e0d-db6e-4250-9198-e72bd4a805fc",
+      "name": "Update Message ID (Rewrite)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "c7NQ8ucxBVwUr4Ye",
+          "name": "Harsh Google Sheets"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/views.open",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  trigger_id: $json.trigger_id,\n  view: {\n    type: 'modal',\n    callback_id: 'rewrite_modal',\n    private_metadata: JSON.stringify({ message_ts: $json.message_ts, prev_email: $json.full_email_text }),\n    title: { type: 'plain_text', text: 'Rewrite Email' },\n    submit: { type: 'plain_text', text: 'Submit' },\n    close: { type: 'plain_text', text: 'Cancel' },\n    blocks: [\n      { type: 'section', text: { type: 'mrkdwn', text: '*Current draft:*' } },\n      { type: 'section', text: { type: 'mrkdwn', text: '```' + $json.full_email_text + '```' } },\n      {\n        type: 'input',\n        block_id: 'feedback_block',\n        label: { type: 'plain_text', text: 'What should we improve?' },\n        element: { type: 'plain_text_input', action_id: 'feedback_input', multiline: true }\n      }\n    ]\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        48,
+        752
+      ],
+      "id": "353b73c5-0bd6-4380-af84-65a13178d792",
+      "name": "Open Feedback Modal",
+      "credentials": {
+        "slackApi": {
+          "id": "cfGTI3Flp1OcwCcd",
+          "name": "Harsh Slack Agents"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event_type }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event_type }}",
+                    "rightValue": "rewrite",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rewrite"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.event_type }}",
+                    "rightValue": "view_submission",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "view_submission"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "route-slack-event-switch",
+      "name": "Route Slack Event",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -432,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.feedback ? `Rewrite the previous email applying the reviewer's feedback.\\n\\nPrevious Email:\\n${$json.prev_email}\\n\\nImprovements requested by the reviewer:\\n${$json.feedback}` : `New inbound inquiry. Write the first-draft reply.\\n\\nClient Name: ${$json.Lead_Name}\\nClient Email: ${$json.Lead_Email}\\nClient Message: ${$json.Lead_Message}` }}",
+        "options": {
+          "systemMessage": "You are the Email Assistant for FusionSync AI, a company that builds AI and automation solutions for businesses.\n\nYou either write a first-draft reply to a new inbound inquiry, OR rewrite an existing draft based on reviewer feedback. Follow the task instructions in the user message.\n\nGuidelines (all cases):\n- Address the client by their first name when a name is available. If the name is missing, use a warm, generic greeting.\n- Directly answer the client's questions and show that you understood their request.\n- Keep it clear, concise, and professional, with a friendly tone.\n- Structure: greeting, 1-3 short paragraphs, then one clear next step (e.g. a quick call or a couple of clarifying questions).\n- Sign off as \"The FusionSync AI Team\".\n- Do NOT invent links, prices, phone numbers, or bracketed placeholders such as [Your Name] or [Calendar Link]. If you do not have a value, leave it out.\n\nWhen rewriting:\n- Apply the reviewer's feedback precisely; change only what is needed.\n- Keep the original intent and the client's name / greeting from the previous email.\n- Keep the same Subject unless the feedback explicitly asks to change it.\n\nOutput format (exactly):\nSubject: <one-line subject>\n\n<email body>\n\nReturn only the email in that format. No explanations, no preamble."
+        }
+      },
+      "id": "b8ae713e-b09c-4761-ad7e-f310fbaa622e",
+      "name": "Email Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -432,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "id": "da0c0798-a906-417d-85f7-15efc4ed4226",
+      "name": "Gemini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        256
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "xEdXDIPxkqE6OLxQ",
+          "name": "Harsh Gemini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Save Lead to Sheet').isExecuted }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "draft"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Parse Slack Payload').isExecuted }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "rewrite"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "88efdd2d-955d-4fe0-ae27-c9398ab0ab28",
+      "name": "Route Agent Output",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -128,
+        16
+      ]
+    }
+  ],
+  "pinData": {
+    "AI Agent1": [
+      {
+        "json": {
+          "output": "Subject: Instagram DM Agent\n\nHi there,\n\nWe can help you build an Instagram DM agent to handle your leads. \n\nTo get started, please let us know:\n1. What do you want the agent to do?\n2. Do you currently use a CRM?\n\nOr, book a quick call here to discuss: [Insert Calendar Link]\n\nBest regards,\n\n[Your Name]  \n[Your Company Name]"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Webhook1": [
+      {
+        "json": {
+          "headers": {
+            "connection": "upgrade",
+            "host": "n8n.fusionsync.ai",
+            "x-real-ip": "13.220.145.8",
+            "x-forwarded-for": "13.220.145.8",
+            "x-forwarded-proto": "https",
+            "content-length": "3086",
+            "user-agent": "Slackbot 1.0 (+https://api.slack.com/robots)",
+            "accept-encoding": "gzip,deflate",
+            "accept": "application/json,*/*",
+            "x-slack-signature": "v0=cfc182b805a6d159297590c24d3a6e6018f5f98913599d1db262da6591646322",
+            "x-slack-request-timestamp": "1780659566",
+            "content-type": "application/x-www-form-urlencoded"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "payload": "{\"type\":\"block_actions\",\"user\":{\"id\":\"U07QNH1DQ6A\",\"username\":\"hk532590\",\"name\":\"hk532590\",\"team_id\":\"T07QV2U40JX\"},\"api_app_id\":\"A087U7D9Y1J\",\"token\":\"xMSsc4tlQRpTZx2ke07ua8ZE\",\"container\":{\"type\":\"message\",\"message_ts\":\"1780659549.267829\",\"channel_id\":\"C0B810XN7KM\",\"is_ephemeral\":false},\"trigger_id\":\"11294451094020.7845096136643.49c91dd45cbf146f73ec13d05e46cbff\",\"team\":{\"id\":\"T07QV2U40JX\",\"domain\":\"fusionsyncai\"},\"enterprise\":null,\"is_enterprise_install\":false,\"channel\":{\"id\":\"C0B810XN7KM\",\"name\":\"privategroup\"},\"message\":{\"user\":\"U07QNH1DQ6A\",\"type\":\"message\",\"ts\":\"1780659549.267829\",\"bot_id\":\"B087U8QF5D2\",\"app_id\":\"A087U7D9Y1J\",\"text\":\"New email draft awaiting review and approval.\",\"team\":\"T07QV2U40JX\",\"blocks\":[{\"type\":\"section\",\"block_id\":\"wrtPH\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"Subject: Fully automating your Instagram DM Agent\\n\\nHi there,\\n\\nThanks for reaching out! We would love to help you build a fully automated Instagram DM agent to manage your incoming messages, qualify leads, and streamline your workflow from end to end. \\n\\nWe can automate the entire process for you\\u2014from answering FAQs and collecting contact details to booking appointments directly into your calendar and syncing the data with your CRM.\\n\\nLet's hop on a quick, 15-minute call to map out a complete automation strategy for your business. You can book a convenient time here: [Calendar Link].\\n\\nLooking forward to speaking with you!\\n\\nBest regards,\\n\\n[Your Name]  \\n[Your Company Name]\",\"verbatim\":false}},{\"type\":\"actions\",\"block_id\":\"L58sG\",\"elements\":[{\"type\":\"button\",\"action_id\":\"email_approve\",\"text\":{\"type\":\"plain_text\",\"text\":\":white_check_mark: Approve &amp; Send\",\"emoji\":true},\"value\":\"approve\"},{\"type\":\"button\",\"action_id\":\"email_rewrite\",\"text\":{\"type\":\"plain_text\",\"text\":\":pencil2: Rewrite\",\"emoji\":true},\"value\":\"rewrite\"}]}]},\"state\":{\"values\":{}},\"response_url\":\"https:\\/\\/hooks.slack.com\\/actions\\/T07QV2U40JX\\/11284462088851\\/Epixp72UThESZB4eVexCayUN\",\"actions\":[{\"action_id\":\"email_approve\",\"block_id\":\"L58sG\",\"text\":{\"type\":\"plain_text\",\"text\":\":white_check_mark: Approve &amp; Send\",\"emoji\":true},\"value\":\"approve\",\"type\":\"button\",\"action_ts\":\"1780659566.431557\"}]}"
+          },
+          "webhookUrl": "https://n8n.fusionsync.ai/webhook/slack-rdkd",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Lead Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Draft to Slack": {
+      "main": [
+        [
+          {
+            "node": "Save Message ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Interaction Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Slack Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead (Approve)": {
+      "main": [
+        [
+          {
+            "node": "Save Approved Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Approved Draft": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead (Rewrite)": {
+      "main": [
+        [
+          {
+            "node": "Update Message ID (Rewrite)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repost Rewritten Draft": {
+      "main": [
+        [
+          {
+            "node": "Lookup Lead (Rewrite)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Slack Payload": {
+      "main": [
+        [
+          {
+            "node": "Route Slack Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Slack Event": {
+      "main": [
+        [
+          {
+            "node": "Lookup Lead (Approve)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Open Feedback Modal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Lead to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "Route Agent Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Agent Output": {
+      "main": [
+        [
+          {
+            "node": "Post Draft to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Repost Rewritten Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "ce724da4-f918-42a4-a881-d3e25f534624",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742"
+  },
+  "id": "VE3EPdRqw24k5aUp",
+  "tags": []
+}

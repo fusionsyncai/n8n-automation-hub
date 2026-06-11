@@ -1,0 +1,155 @@
+---
+title: "Build a WhatsApp AI support agent with n8n: RAG answers, per-contact memory, auto-replies"
+description: "Wire the WhatsApp Business Cloud API into an n8n RAG agent that answers from your own docs, remembers each contact's conversation, and replies automatically, with a sales handoff built in."
+slug: "whatsapp-ai-agent-rag-n8n"
+publishedAt: "2026-06-05"
+updatedAt: "2026-06-05"
+author: "n8n-hub-team"
+category: "whatsapp-meta-automation"
+contentType: implementation
+tags: ["n8n", "WhatsApp", "AI agents", "RAG", "Supabase", "OpenAI"]
+featured: false
+draft: false
+---
+
+WhatsApp is where a lot of inbound actually lands, and most businesses answer it with a human copying canned replies or, worse, leaving messages on read for hours. The fix is not a dumb autoresponder that says "we'll get back to you." It is an agent that reads the question, answers from your real knowledge base, remembers the conversation, and nudges interested people toward a booking.
+
+This guide builds exactly that in n8n: an inbound WhatsApp agent on the official Business Cloud API, grounded in your own documents with retrieval-augmented generation (RAG), with per-contact memory so it never forgets what the customer just said.
+
+## Available resources
+
+This build uses one workflow plus a small amount of backing infrastructure:
+
+1. **n8n workflow** "WhatsApp Client Engagement" (webhook verification + message handling + RAG reply).
+2. **A Supabase vector store** (`whatsapp_documents`) holding your embedded knowledge base.
+3. **A Postgres table** (`whatsapp_n8n_chat_histories`) for per-contact conversation memory.
+
+<WorkflowDownload
+  file="/workflows/whatsapp-ai-agent-rag-n8n.json"
+  title="WhatsApp Client Engagement - FusionSyncAI"
+/>
+
+## What you'll need
+
+Before you begin, make sure you have:
+
+1. An **n8n account** (cloud or self-hosted) with the workflow editor.
+2. A **Meta WhatsApp Business** app with the **Cloud API** enabled: a phone number ID, a permanent access token, and a verify token you choose.
+3. An **OpenAI API key** for both the chat model (`gpt-4o-mini`) and embeddings (`text-embedding-3-small`).
+4. A **Supabase project** with `pgvector` enabled, a `whatsapp_documents` table, and the `match_documents` query function.
+5. A **Postgres database** (the Supabase one works) for the chat memory table.
+
+## Overview of the automation
+
+There are two jobs in one workflow. They share a single webhook path (`fusionsk`).
+
+1. **Verification.** Meta sends a one-time `GET` handshake to confirm you own the webhook. The workflow echoes back the `hub.challenge` value.
+2. **Message handling.** Every inbound message hits the same path as a `POST`. The workflow extracts the text and sender, runs a RAG agent grounded in your docs and the conversation history, and sends the reply back over the WhatsApp Cloud API.
+
+<WorkflowDiagram caption="One webhook path serves Meta's verification and live inbound messages.">
+  <WorkflowStep node="Meta WhatsApp" via="GET handshake" detail="Verification: echo hub.challenge back to Meta once." />
+  <WorkflowStep node="Webhook (POST)" detail="Receive inbound message events from the Cloud API." />
+  <WorkflowStep node="Set + Filter" detail="Extract chatInput (message text) and sessionid (wa_id); drop empty events." />
+  <WorkflowStep node="RAG AI Agent" detail="OpenAI chat model + Postgres memory + Supabase document retrieval." />
+  <WorkflowStep node="WhatsApp Business Cloud" via="send" detail="Reply to the original sender with the agent output." />
+  <WorkflowOutput>WhatsApp: automatic, grounded reply per message</WorkflowOutput>
+  <WorkflowOutput>Postgres + Supabase: memory and knowledge that persist</WorkflowOutput>
+</WorkflowDiagram>
+
+The design decision that makes this reliable is **grounding plus memory**. RAG keeps answers tied to your real documents instead of the model's imagination, and per-contact memory keyed on the WhatsApp ID means a back-and-forth conversation actually holds together.
+
+## Step-by-step setup
+
+### 1. Stand up the knowledge base in Supabase
+
+Create a `whatsapp_documents` table with a vector column and the `match_documents` function (the standard Supabase + LangChain pgvector setup). Embed your source material (service descriptions, FAQs, pricing notes, policies) with `text-embedding-3-small` and load it in.
+
+<Callout variant="tip" title="Ingestion is a separate flow">
+This workflow only reads from the vector store at answer time. Loading and embedding your documents is a one-time (or scheduled) ingestion workflow you run separately. Keep retrieval and ingestion in different workflows so a re-index never blocks live replies.
+</Callout>
+
+### 2. Handle the Meta verification handshake
+
+Add a `Webhook` node on path `fusionsk` set to respond via a response node. Meta calls it once with a `GET` and a `hub.challenge` query parameter. Wire it to a `Respond to Webhook` node that returns that value as plain text:
+
+```text
+{{ $json.query['hub.challenge'] }}
+```
+
+Enter the same verify token in n8n and in the Meta dashboard. Once Meta gets the challenge back, the webhook is verified.
+
+### 3. Receive inbound messages
+
+Add a second `Webhook` node on the same `fusionsk` path, this time `POST`. This is where the Cloud API delivers message events. A `Set` node pulls the two fields the agent needs out of Meta's deeply nested payload:
+
+```js
+chatInput = {{ $('Received New Message').first().json.body.entry[0].changes[0].value.messages[0].text.body }}
+sessionid = {{ $('Received New Message').first().json.body.entry[0].changes[0].value.contacts[0].wa_id }}
+```
+
+`sessionid` is the contact's WhatsApp ID. It becomes the memory key, so each person gets their own conversation thread.
+
+### 4. Filter out noise
+
+Meta sends webhook events for delivery receipts, read status, and more, not just text. A `Filter` node only proceeds when both `chatInput` and `sessionid` are non-empty, so status callbacks do not trigger a pointless agent run.
+
+### 5. Build the RAG agent
+
+Add an `AI Agent` node and wire four things into it:
+
+- **Chat model.** `OpenAI Chat Model` (`gpt-4o-mini`) as the language model.
+- **Memory.** `Postgres Chat Memory` using `sessionid` as the key and table `whatsapp_n8n_chat_histories`. This is what gives the bot continuity per contact.
+- **Document retrieval.** A `Vector Store` tool named `user_documents` backed by the `Supabase Vector Store` (table `whatsapp_documents`, query `match_documents`) with `Embeddings OpenAI`. The agent calls this tool to fetch relevant context before answering.
+- **System prompt.** Your agent persona and rules.
+
+The prompt does the sales work. It answers service questions, gauges interest, and branches:
+
+```text
+Interested  -> share the booking link (cal.com/your-handle)
+Not interested -> point to the website and leave the door open
+```
+
+<Callout variant="warning" title="Tell the model to drop markdown">
+WhatsApp does not render markdown. If the model returns text with asterisks or hashes, customers see literal `*` and `#`. Instruct the agent to reply in plain text only, as this prompt does.
+</Callout>
+
+### 6. Send the reply
+
+The agent output goes to the `WhatsApp Business Cloud` node (operation `send`). Set your `phoneNumberId`, and address the reply to the original sender:
+
+```text
+recipient = {{ $('Received New Message').first().json.body.entry[0].changes[0].value.messages[0].from }}
+text      = {{ $json.output }}
+```
+
+That closes the loop: message in, grounded answer out, conversation remembered.
+
+## Testing the workflow
+
+1. **Verify the webhook.** Add the `fusionsk` URL and your verify token in the Meta dashboard. Confirm the subscription turns green (the `hub.challenge` echo succeeded).
+2. **Send a real message.** Message your WhatsApp Business number from a personal phone. You should get an answer within a few seconds.
+3. **Check grounding.** Ask something only answerable from your docs. Confirm the reply uses that content rather than a generic guess. If it guesses, your vector store is empty or `match_documents` is misconfigured.
+4. **Check memory.** Send a follow-up like "and how much is that?" without repeating context. The agent should understand it from history. Confirm a row exists in `whatsapp_n8n_chat_histories` for your `wa_id`.
+5. **Check the handoff.** Express interest and confirm it shares the booking link; decline and confirm it shares the website instead.
+
+## Customization options
+
+- **Swap the model.** Replace `gpt-4o-mini` with another OpenAI model or a different provider; the agent wiring stays the same.
+- **Handle media and buttons.** Extend the `Set` node to read image, audio, or interactive button payloads, not just `text.body`.
+- **Add a human handoff.** Detect intent like "talk to a person" and route the conversation to a Slack channel or a live-agent queue.
+- **Log leads.** Append qualified conversations to a CRM or Google Sheet so interest does not live only in chat history.
+- **Add guardrails.** Cap response length, add a profanity or off-topic filter, and set a fallback message for when retrieval returns nothing relevant.
+
+## Common mistakes that quietly break this
+
+- **Skipping the empty-event filter.** Without it, delivery and read receipts trigger the agent and burn tokens on nothing.
+- **Reusing one global memory key.** Memory must key on `wa_id`. A shared key bleeds one customer's context into another's conversation.
+- **Returning markdown to WhatsApp.** Asterisks and hashes show up literally. Force plain text in the prompt.
+- **An empty or stale vector store.** RAG only grounds answers if documents are actually embedded and current. Re-index when your offering changes.
+- **Mismatched verify tokens.** If the token in n8n and Meta differ, the handshake fails and no messages ever arrive.
+
+<InlineCta />
+
+## Conclusion
+
+You now have a WhatsApp agent that behaves like a sharp first responder: it answers from your real knowledge base, keeps each conversation straight with per-contact memory, replies in seconds over the official Cloud API, and steers interested people toward a booking. Point your knowledge base at it, verify the webhook once, and inbound WhatsApp stops being a queue someone has to babysit.

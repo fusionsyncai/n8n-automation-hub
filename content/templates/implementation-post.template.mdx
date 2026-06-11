@@ -12,41 +12,95 @@ featured: false
 draft: true
 ---
 
-## Overview
+[Intro: 2 short paragraphs, no heading. Paragraph 1 is the problem hook (who
+feels this pain and why the naive fix fails). Paragraph 2 is what this guide
+builds and the key design decision, with a link to the companion playbook.]
 
-[What it does and what it solves. One paragraph.]
+## Available resources
 
-## What you will build
+This build uses [N] assets you will set up below:
 
-[Bullet list of capabilities the reader will have at the end.]
+1. **n8n workflow** "[Workflow name]" ([one-line description]).
+2. **[Data store]** "[Name]" ([what it stores / why]).
 
-## Prerequisites
+<WorkflowDownload
+  file="/workflows/[slug].json"
+  title="[Workflow name]"
+/>
 
-- n8n (cloud or self-hosted)
-- [Forms provider]
-- [Slack workspace + app scopes]
-- [Google Sheet with columns: ...]
-- [LLM API key]
+## What you'll need
 
-## Architecture (quick reference)
+Before you begin, make sure you have:
 
-[Same pipeline as playbook, shorter.]
+1. An **n8n account** (cloud or self-hosted).
+2. [Account / credential / app scope, bolded lead-in].
+3. [LLM API key, etc.]
 
-## Step 1: [First setup step]
+## Overview of the automation
 
-[Screenshot: `![...](...)` when Vishal provides assets.]
+[1-2 sentences framing the flow, then a numbered list of the phases. A human
+approval usually sits between phases.]
 
-## Step 2: ...
+1. **[Phase one].** [What happens.]
+2. **[Phase two].** [What happens.]
 
-[Continue numbered steps aligned with screenshots.]
+<WorkflowDiagram caption="[One-line caption.]">
+  <WorkflowStep node="[Node]" via="[connector]" detail="[What it does.]" />
+  <WorkflowOutput>[Terminal output]</WorkflowOutput>
+</WorkflowDiagram>
 
-## Step N: Import workflow JSON
+[One paragraph on the important design decision, e.g. the approval gate.]
 
-[Paste or link to export. Credential swap instructions.]
+## Step-by-step setup
 
-## Operating the workflow
+### 1. Set up the [data store]
 
-[How to monitor the sheet, handle rejects, retry failures.]
+[Schema / columns table. Note the match key.]
+
+### 2. Connect credentials in n8n
+
+[Numbered list of credentials with bolded lead-ins.]
+
+### 3. Build phase one: [capture / draft / ...]
+
+[Node-by-node build with **bolded action lead-ins**. Include expressions, code,
+and Block Kit / JSON snippets in fenced code blocks.]
+
+### 4. Build phase two: [review / publish / ...]
+
+[Continue the build. Use a `<Callout>` for any sharp gotcha.]
+
+### N. Import the workflow JSON
+
+Grab the ready-made workflow with the download button above, or export your own
+from n8n. On the target instance, import the file, re-select the credentials
+from Step 2, and update any workspace-specific ids.
+
+## Testing the workflow
+
+Validate each phase before pointing it at real data:
+
+1. **[Trigger the flow].** [Expected result.]
+2. **[Check the output].** [What good looks like.]
+3. **[Exercise the human gate].** [Approve / reject / rewrite path.]
+
+[One line on the most common failure point and where to look.]
+
+## Customization options
+
+- **[Swap a piece].** [How and why.]
+- **[Extend behavior].** [How and why.]
+
+## Common mistakes that quietly break this
+
+- **[Mistake].** [Why it breaks and the fix.]
+- **[Mistake].** [Why it breaks and the fix.]
+
+<InlineCta />
+
+## Conclusion
+
+[Wrap-up paragraph: restate the outcome and the human-in-control payoff.]
 
 <!-- Post layout adds the implementation CTA ("Need help setting this up?") automatically.
      Do not add <CtaBlock /> in implementation MDX. -->

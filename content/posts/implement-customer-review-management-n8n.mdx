@@ -1,0 +1,261 @@
+---
+title: "How to Automate Customer Review Management with n8n, Gmail, and Gemini AI"
+description: "Install an n8n workflow that emails review requests, filters unhappy feedback privately, logs ratings in Google Sheets, and drafts Google review replies with Gemini AI."
+slug: "implement-customer-review-management-n8n"
+publishedAt: "2026-06-08"
+author: "n8n-hub-team"
+category: "business-process-automation"
+contentType: implementation
+tags:
+  [
+    "n8n",
+    "Google reviews",
+    "reputation management",
+    "Gmail",
+    "Google Sheets",
+    "AI agents",
+    "Gemini",
+  ]
+featured: false
+draft: false
+---
+
+Reviews decide whether a stranger trusts your business, yet asking for them is awkward and chasing them is worse. Send nothing and your happiest customers quietly move on; send a blast and you risk an angry one-star landing on your public Google listing where it sits forever. The naive fix, a manual "please review us" email, gets sent late, to the wrong people, with no way to catch a frustrated customer before they go public.
+
+This guide builds a review engine that handles the whole lifecycle in n8n. It emails customers a review form after purchase, filters happy customers toward your public Google listing while routing unhappy ones into a private feedback channel, logs every response in Google Sheets, and uses a Gemini AI agent to draft replies to your public reviews. It covers the same ground as the popular [WhatsApp-based review automation from GrowwStacks](https://growwstacks.com/blog/automate-google-reviews-with-n8n#feedback-filtering), but over email and without the click-tracking step.
+
+## Available resources
+
+This build uses three assets you will set up below:
+
+1. **n8n workflow** "Customer Review Management" (email requests, feedback filtering, and AI review replies).
+2. **Google Sheet tab** "Customers" (the contact list and send-status tracker).
+3. **Google Sheet tab** "Reviews" (the log of every rating, comment, and reply status).
+
+<WorkflowDownload
+  file="/workflows/implement-customer-review-management-n8n.json"
+  title="Customer Review Management"
+/>
+
+## What you'll need
+
+Before you begin, make sure you have:
+
+1. An **n8n account** (cloud or self-hosted) reachable at a public HTTPS webhook URL.
+2. A **Google account** with one Google Sheet (two tabs) used as the system of record.
+3. A **Gmail account** for sending the review request emails.
+4. A **Gemini API key** for the AI agent that drafts review replies (any chat model n8n supports also works).
+5. A **hosted review form** (a simple web page) that collects a star rating and posts low ratings to your n8n webhook.
+6. A **Google Business Profile** if you want to pull and reply to public Google reviews.
+
+## Overview of the automation
+
+The automation runs in three phases that share one Google Sheet. A human decision sits between capturing feedback and replying to it.
+
+1. **Request reviews.** On a schedule, n8n pulls customers who have not been asked yet and emails each one a link to your review form, then marks the row as sent.
+2. **Capture and filter feedback.** The form sends 4 and 5 star customers to your public Google listing, while 1 to 3 star customers submit private feedback that posts to an n8n webhook and is logged for follow-up.
+3. **Reply to public reviews.** A Google Business Profile trigger feeds each new public review to a Gemini agent, which drafts a short reply for your team to approve before it posts.
+
+<WorkflowDiagram caption="Email request to AI-drafted reply, with unhappy feedback diverted off the public listing.">
+  <WorkflowStep
+    node="Schedule Trigger"
+    via="cron"
+    detail="Run the request batch on a recurring schedule."
+  />
+  <WorkflowStep
+    node="Google Sheets"
+    via="get rows"
+    detail="Pull customers whose review request has not been sent."
+  />
+  <WorkflowStep
+    node="Gmail"
+    via="send"
+    detail="Email each customer a link to the star-rating review form."
+  />
+  <WorkflowStep
+    node="Review form"
+    via="webhook"
+    detail="4 to 5 stars go to Google; 1 to 3 stars post private feedback to n8n."
+  />
+  <WorkflowStep
+    node="Google Sheets"
+    via="append"
+    detail="Log each review with its rating and a Not Replied status."
+  />
+  <WorkflowStep
+    node="AI agent"
+    detail="Draft a short reply to each public Google review."
+  />
+  <WorkflowOutput>Review requests sent, status tracked in Sheets</WorkflowOutput>
+  <WorkflowOutput>Unhappy feedback captured privately, off the public listing</WorkflowOutput>
+  <WorkflowOutput>AI-drafted replies to Google reviews for human approval</WorkflowOutput>
+</WorkflowDiagram>
+
+The important design decision is the **rating split before anything becomes public**. A delighted customer is one tap from a five-star Google review; a frustrated one is one tap from a private message that reaches your inbox instead of your listing. The filter happens on the form itself, so the unhappy path never touches Google, and you get a chance to fix the problem before it costs you a public star.
+
+## Step-by-step setup
+
+### 1. Set up the Google Sheets
+
+Create one Google Sheet with two tabs. The first tab drives who gets emailed; the second is the review log.
+
+**Tab one, "Customers"** (the contact list and send tracker):
+
+| Column            | Purpose                                                       |
+| ----------------- | ------------------------------------------------------------ |
+| `Name`            | Customer display name, used to personalize the email         |
+| `Email`           | Where the review request is sent, also the row match key     |
+| `Date of Purchase`| When they bought, so you can delay the ask if you want       |
+| `Review Email`    | Send status: `Not Sent` initially, set to `Sent` after email |
+| `Review msg Status`| Optional guard column the workflow checks before sending     |
+
+**Tab two, "Reviews"** (the log of every response):
+
+| Column                     | Purpose                                                   |
+| -------------------------- | --------------------------------------------------------- |
+| `Name`                     | Reviewer name from the form                                |
+| `Email`                    | Reviewer email, for follow-up                              |
+| `Rating`                   | The star rating they submitted                            |
+| `Customer Review`          | The free-text comment                                     |
+| `Handle With AI Or Manually`| Who owns the reply: `AI` or `Manually`                   |
+| `Replied Or Not`           | Reply status: `Not Replied` until handled                |
+
+### 2. Connect credentials in n8n
+
+Add three credentials so the Sheets, Gmail, and agent nodes can authenticate:
+
+1. **Google Sheets** (OAuth2) with read and write on both tabs.
+2. **Gmail** (OAuth2) for sending the review request emails.
+3. **Google Gemini** for the chat model behind the review-reply agent.
+
+### 3. Build phase one: email the review request
+
+**Trigger the batch.** Add a `Schedule Trigger` named `Schedule Trigger` and set the interval that fits your volume, for example once a day. Leave it disabled while you build and test, then enable it when you go live.
+
+**Pull customers who have not been asked.** Add a `Google Sheets` node named `Get row(s) in sheet` pointed at the `Customers` tab. Add a filter so it only returns rows where `Review Email` equals `Not Sent`. That keeps the batch to people who still need the ask.
+
+**Guard against double sends.** Add an `If` node that only continues when the send-status field is still empty:
+
+```text
+={{ $json['Review msg Status'] }}   is empty
+```
+
+**Loop and send.** Add a `Loop Over Items` (Split in Batches) node so each customer is handled one at a time, then a `Gmail` node named `Send a message` on the loop output. Set the recipient to the customer email and the body to your review form link:
+
+```text
+To:      ={{ $json.Email }}
+Subject: Please help us with your valuable review
+Body:    https://your-review-form-url
+```
+
+**Mark the row as sent.** After the Gmail node, add a `Google Sheets` node named `Update row in sheet` set to **Update**, matching on `Email`, and write `Review Email` = `Sent`. Wire it back into `Loop Over Items` so the batch advances to the next customer. This is what stops the same person being emailed twice.
+
+### 4. Build phase two: capture and filter the feedback
+
+The filtering lives on the review form, not in n8n. Build a small page with a star rating that branches on the score: 4 and 5 stars open your public Google review link, while 1 to 3 stars reveal a short comment box and POST the feedback to your n8n webhook.
+
+**Receive the private feedback.** Add a `Webhook` node named `Receiving Customer Review` (POST). Enable CORS for your form origin so the browser can call it. The form should send a JSON body like this:
+
+```json
+{
+  "rating": 3,
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "review": "The product was fine but delivery was slow.",
+  "timestamp": "2026-06-08T06:12:53.691Z"
+}
+```
+
+<Callout variant="warning" title="Protect the webhook">
+  This endpoint is called from a public browser form, so it cannot send a secret
+  auth header. Keep the path unguessable, restrict CORS to your form's domain,
+  and validate the payload shape before writing to Sheets so a random POST cannot
+  pollute your review log.
+</Callout>
+
+**Normalize the fields.** Add a `Set` node named `Edit Fields` (Edit Fields) that maps the incoming body into clean top-level fields:
+
+```text
+rating = {{ $json.body.rating }}
+name   = {{ $json.body.name }}
+email  = {{ $json.body.email }}
+review = {{ $json.body.review }}
+```
+
+**Update the contact row.** Add a `Google Sheets` node named `Update row in sheet1` set to **Update** on the `Customers` tab, matching on `Email`, so you know this person responded.
+
+**Log the review.** Add a `Google Sheets` node named `Append row in sheet` set to **Append** on the `Reviews` tab. Map the rating, name, comment, and set the workflow defaults so new feedback lands in a clear queue:
+
+```text
+Name                        = {{ $('Edit Fields').item.json.name }}
+Email                       = {{ $json.Email }}
+Rating                      = {{ $('Edit Fields').item.json.rating }}
+Customer Review             = {{ $('Edit Fields').item.json.review }}
+Handle With AI Or Manually  = Manually
+Replied Or Not              = Not Replied
+```
+
+Defaulting private feedback to `Manually` and `Not Replied` is the human gate: a low rating is a service-recovery moment, so a person reads it and decides whether to reply by hand or hand it to the AI agent.
+
+### 5. Build phase three: AI replies to public Google reviews
+
+**Trigger on new reviews.** The shipped workflow uses a `Manual Trigger` named "Change this with Google Business Profile Trigger" as a stand-in. Replace it with a Google Business Profile trigger (or a scheduled HTTP request to the Business Profile API) that emits each new public review.
+
+**Shape the review.** Add a `Set` node named `Edit Fields1` that pulls the fields the agent needs from the review payload:
+
+```text
+reviewId    = {{ $json.reviewId }}
+displayName = {{ $json.reviewer.displayName }}
+comment     = {{ $json.comment }}
+createTime  = {{ $json.createTime }}
+reviewReply = {{ $json.reviewReply }}
+```
+
+**Draft the reply.** Add a LangChain `AI Agent` named `AI Agent` with a `Google Gemini Chat Model` attached. Give it a tight system prompt and feed it the review:
+
+```text
+System: You are a helpful assistant. Write simple and short replies to the
+        customer's feedback.
+
+User:   This is the customer review: {{ $json.comment }}
+        Customer name: {{ $json.displayName }}
+```
+
+**Post the reply.** Add the node that writes the reply back to Google Business Profile. In the shipped file this is a `No Operation` placeholder named `Add Reply to Google Business Profile`; swap it for an HTTP Request to the Business Profile API once your credentials are in place. Keep a human approval in front of the post step until you trust the tone.
+
+### 6. Import the workflow JSON
+
+Grab the ready-made workflow with the download button above, or export your own by opening the workflow in n8n and using the menu to **Download** the JSON. On the target instance, import the file, then re-create or re-select the three credentials from Step 2. Finally, update the Google Sheet document id, the two tab names, your Gmail sender, and the review form URL to match your setup.
+
+## Testing the workflow
+
+Validate each phase before pointing it at real customers:
+
+1. **Run the request batch.** Add one test row to `Customers` with `Review Email` set to `Not Sent`, run the schedule branch manually, and confirm the email arrives and the row flips to `Sent`.
+2. **Submit a happy rating.** Open the form, pick five stars, and confirm it sends you to the Google review link with no row added to `Reviews`.
+3. **Submit an unhappy rating.** Pick two stars, type a comment, submit, and confirm a new row appears in `Reviews` with `Handle With AI Or Manually` = `Manually` and `Replied Or Not` = `Not Replied`.
+4. **Draft a reply.** Run the review-reply branch with a sample review and confirm the agent returns a short, on-topic reply before any post step.
+
+If the webhook never fires, check CORS and the form's POST URL first; a blocked cross-origin request is the most common failure point.
+
+## Customization options
+
+- **Delay the ask.** Use `Date of Purchase` in a filter so the request only goes out a few days after the sale, when the experience is fresh but settled.
+- **Swap the channel.** Replace the Gmail node with WhatsApp, SMS, or Telegram if your customers prefer it; the rest of the flow is identical.
+- **Swap the model.** Replace Gemini with OpenAI, Anthropic, or any chat model n8n supports. The agent and prompt stay the same.
+- **Auto-reply to five-star reviews.** Let the AI agent handle clearly positive reviews end to end, and keep critical ones in the manual queue.
+- **Add a follow-up.** Email customers who were sent a request but never responded a gentle reminder after a few days.
+
+## Common mistakes that quietly break this
+
+- **No double-send guard.** If you skip the `If` check and the status update, a customer can get the same request on every run. Always flip `Review Email` to `Sent` after emailing.
+- **Filtering in n8n instead of the form.** If unhappy customers are routed to Google and only filtered afterward, the bad review is already public. The split has to happen on the form, before the click.
+- **An open webhook.** Anyone who finds the URL can inject fake reviews into your log. Restrict CORS to your form domain and validate the payload before writing.
+- **Auto-posting AI replies.** A tone-deaf automated reply to a real complaint makes things worse. Keep a human approval in front of the post step until you trust it.
+- **Treating Sheets as disposable.** The `Reviews` tab is your audit log and follow-up queue. Match on a stable key (`Email`) and keep the status columns accurate.
+
+<InlineCta />
+
+## Conclusion
+
+You now have a review engine that asks at the right moment, protects your public rating, and keeps a human in control of the replies. Happy customers flow to your Google listing, unhappy ones land in a private queue you can actually act on, every response is logged in Google Sheets, and a Gemini agent drafts the replies so your team only has to approve. More five-star reviews, fewer public surprises, and far less manual chasing.

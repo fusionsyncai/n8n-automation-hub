@@ -1,0 +1,438 @@
+{
+  "name": "WhatsApp Client Engagement - FusionSyncAI",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {}
+      },
+      "id": "212aed3c-82a7-4a27-90af-c902f6db92c5",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "name": "user_documents",
+        "description": "Contains all the user's documents that you can check for context to answer user questions."
+      },
+      "id": "64682950-e67e-4dea-bf79-53f05f7f0397",
+      "name": "Retrieve Documents",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small",
+        "options": {}
+      },
+      "id": "d2a75efe-d780-466f-afd2-f7b93f9ebd0d",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a9a245e-f1a1-4282-bb02-a81ffe629f0f",
+              "name": "chatInput",
+              "value": "={{ $('Received New Message').first().json.body.entry[0].changes[0].value.messages[0].text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "8866a273-0d84-44e0-acf9-b0554fe3fe2a",
+              "name": "sessionid",
+              "value": "={{ $('Received New Message').first().json.body.entry[0].changes[0].value.contacts[0].wa_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fdc01101-181b-423a-b28f-cf2f681cde12",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {}
+      },
+      "id": "7e6ae171-2e8f-4fac-a5cb-95ab5b940297",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        320,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionid }}",
+        "tableName": "whatsapp_n8n_chat_histories"
+      },
+      "id": "1c6441be-d83e-410e-b7c1-91fe76f05282",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        464,
+        480
+      ],
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "427650057104088",
+        "recipientPhoneNumber": "={{ $('Received New Message').first().json.body.entry[0].changes[0].value.messages[0].from}}",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "9b0ec4b4-68ed-477c-b4c7-2970b9d5db86",
+      "name": "WhatsApp Business Cloud",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        752,
+        272
+      ],
+      "webhookId": "0502e9a3-c131-4e40-8481-89ac61efaa43"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "id": "e31f8051-81e8-407b-88a3-194db320effc",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "735b8af2-f73d-422f-896e-9e6a5dffaa72",
+              "leftValue": "={{ $json.sessionid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a1d2c3f7-b29d-4f0f-af90-026d2fc28c08",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "245f6fcf-c60c-47c0-b022-e2ca120dd762",
+      "name": "Check SeesionId is not Empty",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "height": 536.8023994268705,
+        "width": 973.3737975422349
+      },
+      "id": "900ab63d-a990-485d-98fc-cfb594654bb2",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "height": 536.8023994268705,
+        "width": 538.4072693447694,
+        "color": 4
+      },
+      "id": "111e7427-b7eb-4aae-9a05-1312ba54c471",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        992,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "path": "fusionsk",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e1e69762-0711-4cf5-8cb2-65aa84e4886a",
+      "name": "Authenticate WTSP",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "60adf9e4-af32-4663-8678-f00ddf82e8ed"
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "whatsapp_documents",
+          "mode": "list",
+          "cachedResultName": "whatsapp_documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "id": "033160ff-806f-4369-912c-fd6be128ce93",
+      "name": "Supabase Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# WhatsApp Chatbot Prompt\n\n## Answering User Queries\n- If the user asks a specific question about AI automation services:\n  - **Acknowledge the Question:**\n    - \"Thank you for reaching out! I'm here to help you with any information you need.\"\n  - **Provide the Answer:**\n    - \"Here's what we offer: [Provide a detailed answer to the user's query about AI automation services].\"\n  - **Example Input:**\n    - User: \"Can you tell me more about your AI automation services?\"\n    - Response: \"Thank you for reaching out! I'm here to help you with any information you need.\n     - We provide a variety of AI automation services, including\n     1.custom chatbot development\n     2.AI assistants\n     3.process automation\n     and Other Custom Automation specific to you business need.\n     \n     Our goal is to help businesses enhance efficiency and streamline operations through innovative AI solutions.\"\n     \n  - **Follow-up:**\n    - \"Is there anything else you would like to know about our services or any other questions I can assist you with?\"\n\n## Understanding User Inquiry\n- \"Could you please share more details about your needs or what specific services you're interested in?\"\n\n## Assessing Interest Level\n- \"Based on what you've mentioned, it seems like you might be interested in learning more. Would you agree?\"\n\n## Interested Response\n- If the user indicates interest:\n  - \"Fantastic! I'm excited to hear that you're interested. You can schedule a meeting with us at your convenience using this link:(https://cal.com/fusionsyncai/website). We look forward to connecting with you!\"\n\n## Not Interested Response\n- If the user does not seem interested:\n  - \"That's perfectly fine! If you ever want to explore our offerings further, feel free to visit our website:(https://fusionsync.ai). Don't hesitate to reach out if you have any other questions!\"\n\n---\n\n**Notes:**\n- Ensure the chatbot can dynamically generate responses based on user input.\n- The links provided are correctly formatted for easy access.\n- Make sure that you should give simple text without any *,# or any other signs for ouput",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Prompt').item.json.prompt }}"
+        }
+      },
+      "id": "946f750b-2d44-4255-8832-6317a3cbe095",
+      "name": "RAG AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        432,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fusionsk",
+        "options": {}
+      },
+      "id": "d831a379-7958-495a-b29b-dcf4c94bebea",
+      "name": "Received New Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        272
+      ],
+      "webhookId": "60adf9e4-af32-4663-8678-f00ddf82e8ed"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Retrieve Documents",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Documents": {
+      "ai_tool": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Check SeesionId is not Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check SeesionId is not Empty": {
+      "main": [
+        [
+          {
+            "node": "RAG AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate WTSP": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Retrieve Documents",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG AI Agent": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Business Cloud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Received New Message": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "be29676a-d710-448b-84e8-2c7bd942f02c",
+  "meta": {
+    "instanceId": "135f7f0618c75a6e80cf675ebad1b517f2edfad4244594eac6beced9c5c87742"
+  },
+  "id": "CcKeDccHQKPdUdP1",
+  "tags": [
+    {
+      "updatedAt": "2025-04-09T06:11:56.535Z",
+      "createdAt": "2025-04-09T06:11:56.535Z",
+      "id": "PqsB7p4BSBn0vzXt",
+      "name": "WhatsApp"
+    },
+    {
+      "updatedAt": "2025-04-09T09:56:05.562Z",
+      "createdAt": "2025-04-09T09:56:05.562Z",
+      "id": "c3O6t058rmMvsN3X",
+      "name": "FusionSyncAI"
+    },
+    {
+      "name": "Sales Funnel",
+      "id": "L3HZeS3YQnPBtJ36",
+      "updatedAt": "2026-06-05T08:28:08.214Z",
+      "createdAt": "2026-06-05T08:28:08.214Z"
+    }
+  ]
+}
