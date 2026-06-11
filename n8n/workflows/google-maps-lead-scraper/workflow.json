@@ -1,0 +1,218 @@
+{
+  "name": "Google Maps Lead Scraper (Gemini)",
+  "nodes": [
+    {
+      "id": "node-trigger",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1240, 0],
+      "parameters": {}
+    },
+    {
+      "id": "node-set-query",
+      "name": "Set Search Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1040, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1f2c3d4-0001-0001-0001-000000000001",
+              "name": "query",
+              "value": "italian based event company",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-serpapi",
+      "name": "SerpApi Google Maps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-840, 0],
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "serpApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "engine", "value": "google_maps" },
+            { "name": "q", "value": "={{ $json.query }}" },
+            { "name": "type", "value": "search" },
+            { "name": "hl", "value": "en" }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "serpApi": {
+          "id": "K4SJ09FkJk51GiNa",
+          "name": "SerpApi"
+        }
+      }
+    },
+    {
+      "id": "node-extract-businesses",
+      "name": "Extract Businesses",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-640, 0],
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst results = data.local_results || data.place_results || [];\nconst list = Array.isArray(results) ? results : [results];\nconst out = [];\nconst seen = new Set();\nfor (const r of list) {\n  if (!r) continue;\n  const website = r.website || '';\n  const key = website || (r.title || '') + '|' + (r.phone || '');\n  if (seen.has(key)) continue;\n  seen.add(key);\n  out.push({ json: {\n    Business_Name: r.title || '',\n    Website: website,\n    Phone: r.phone || ''\n  } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "node-loop",
+      "name": "Loop Over Websites",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [-220, 0],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "node-done",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [0, -180],
+      "parameters": {}
+    },
+    {
+      "id": "node-scrape-site",
+      "name": "Scrape Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 140],
+      "parameters": {
+        "url": "={{ $json.Website }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "node-wait",
+      "name": "Wait 1s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [200, 140],
+      "parameters": {
+        "amount": 1,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "node-extract-lead",
+      "name": "Extract Lead Info (Regex)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 140],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $json.data || $json.body || '';\nconst decoded = String(raw).replace(/&amp;/g, '&');\nconst text = decoded.replace(/<[^>]+>/g, ' ');\n\nconst emailRe = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g;\nconst badExt = /\\.(png|jpe?g|gif|webp|svg|css|js|ico|woff2?|ttf|mp4)$/i;\nconst emails = [...new Set((decoded.match(emailRe) || []).map(e => e.toLowerCase().replace(/[.,;:]+$/, '')))].filter(e => !badExt.test(e) && !/sentry|wixpress|example\\./.test(e));\nconst email = emails.find(e => /^(info|contact|sales|hello|hi|admin|office|enquir|support|booking)@/.test(e)) || emails[0] || '';\n\nfunction pickSocial(re, exclude) {\n  const all = decoded.match(re) || [];\n  for (const u of all) {\n    const url = u.replace(/[).,;'\"]+$/, '');\n    const low = url.toLowerCase();\n    if (exclude.some(x => low.includes(x))) continue;\n    return url;\n  }\n  return '';\n}\nconst instagram = pickSocial(/https?:\\/\\/(?:[a-z0-9-]+\\.)?instagram\\.com\\/[^\\s\"'<>)]+/ig, ['/p/', '/explore', '/reel', '/accounts']);\nconst facebook = pickSocial(/https?:\\/\\/(?:[a-z0-9-]+\\.)?facebook\\.com\\/[^\\s\"'<>)]+/ig, ['sharer', '/plugins', '/tr', 'dialog', '/login', '/help']);\nconst linkedin = pickSocial(/https?:\\/\\/(?:[a-z0-9-]+\\.)?linkedin\\.com\\/[^\\s\"'<>)]+/ig, ['/share', '/sharing', '/cws', '/uas']);\n\nconst phoneMatch = text.match(/\\+?\\d[\\d\\s().\\-]{7,}\\d/);\nconst phonePage = phoneMatch ? phoneMatch[0].replace(/\\s+/g, ' ').trim() : '';\n\nconst loop = $('Loop Over Websites').item.json;\nreturn {\n  json: {\n    Business_Name: loop.Business_Name || '',\n    Website: loop.Website || '',\n    Email: email,\n    Phone: loop.Phone || phonePage || '',\n    Instagram_link: instagram,\n    Facebook_link: facebook,\n    Linkedin_link: linkedin\n  }\n};"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "node-save-sheet",
+      "name": "Save Lead to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [620, 140],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nUgLy53_MAuE41e30-moaEdaqMX2-638JEuSN1OJceM",
+          "mode": "list",
+          "cachedResultName": "Italian Event Company Leads"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "italian event company"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Business_Name": "={{ $json.Business_Name }}",
+            "Email": "={{ $json.Email }}",
+            "Website": "={{ $json.Website }}",
+            "Phone": "={{ $json.Phone }}",
+            "Instagram_link": "={{ $json.Instagram_link }}",
+            "Facebook_link": "={{ $json.Facebook_link }}",
+            "Linkedin_link": "={{ $json.Linkedin_link }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            { "id": "Business_Name", "displayName": "Business_Name", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Email", "displayName": "Email", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Website", "displayName": "Website", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Phone", "displayName": "Phone", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Instagram_link", "displayName": "Instagram_link", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Facebook_link", "displayName": "Facebook_link", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true },
+            { "id": "Linkedin_link", "displayName": "Linkedin_link", "required": false, "defaultMatch": false, "display": true, "type": "string", "canBeUsedToMatch": true }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "c7NQ8ucxBVwUr4Ye",
+          "name": "Harsh Google Sheets"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [[{ "node": "Set Search Query", "type": "main", "index": 0 }]]
+    },
+    "Set Search Query": {
+      "main": [[{ "node": "SerpApi Google Maps", "type": "main", "index": 0 }]]
+    },
+    "SerpApi Google Maps": {
+      "main": [[{ "node": "Extract Businesses", "type": "main", "index": 0 }]]
+    },
+    "Extract Businesses": {
+      "main": [[{ "node": "Loop Over Websites", "type": "main", "index": 0 }]]
+    },
+    "Loop Over Websites": {
+      "main": [
+        [{ "node": "Done", "type": "main", "index": 0 }],
+        [{ "node": "Scrape Website", "type": "main", "index": 0 }]
+      ]
+    },
+    "Scrape Website": {
+      "main": [[{ "node": "Wait 1s", "type": "main", "index": 0 }]]
+    },
+    "Wait 1s": {
+      "main": [[{ "node": "Extract Lead Info (Regex)", "type": "main", "index": 0 }]]
+    },
+    "Extract Lead Info (Regex)": {
+      "main": [[{ "node": "Save Lead to Sheet", "type": "main", "index": 0 }]]
+    },
+    "Save Lead to Sheet": {
+      "main": [[{ "node": "Loop Over Websites", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

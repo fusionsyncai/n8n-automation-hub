@@ -1,0 +1,184 @@
+---
+title: "Scrape local business leads from Google Maps with n8n and SerpApi"
+description: "Build an n8n workflow that pulls businesses from Google Maps via SerpApi, visits each website, extracts emails and social links with regex, and saves clean leads to Google Sheets."
+slug: "scrape-google-maps-business-leads-n8n"
+publishedAt: "2026-06-11"
+updatedAt: "2026-06-11"
+author: "n8n-hub-team"
+category: "sales-process-automation"
+contentType: implementation
+tags: ["n8n", "lead generation", "SerpApi", "Google Maps", "Google Sheets", "web scraping"]
+featured: false
+draft: false
+---
+
+Building a prospect list by hand is the kind of work that quietly eats an afternoon. You search Google Maps for a niche, open each business in a new tab, hunt the website for a contact email, copy the phone number, find their Instagram, and paste it all into a spreadsheet. Then you do it again forty times. The naive fix, scraping Google directly, breaks fast: Google serves a JavaScript app shell and throttles datacenter IPs, so your "company URL" extraction comes back empty.
+
+This guide builds the version that holds up. SerpApi returns structured Google Maps results, n8n loops over each business website, a regex step pulls the email and social profiles straight out of the page HTML, and every lead lands in Google Sheets with consistent columns. No LLM, no browser automation, no babysitting.
+
+## Available resources
+
+This build uses two assets you will set up below:
+
+1. **n8n workflow** "Google Maps Lead Scraper" (search, scrape, enrich, save).
+2. **Google Sheet** "Lead Scraper Sheet" with one tab that stores every captured lead.
+
+<WorkflowDownload
+  file="/workflows/scrape-google-maps-business-leads-n8n.json"
+  title="Google Maps Lead Scraper"
+/>
+
+## What you'll need
+
+Before you begin, make sure you have:
+
+1. An **n8n account** (cloud or self-hosted) with the workflow editor.
+2. A **SerpApi account** and API key, used to fetch structured Google Maps results.
+3. A **Google account** with a Sheet to store leads, connected to n8n via a Google Sheets OAuth2 credential.
+
+## Overview of the automation
+
+The automation runs in two phases inside one workflow. The first phase finds businesses; the second phase enriches each one and writes it to the sheet.
+
+1. **Find businesses.** A search query goes to SerpApi's Google Maps engine, and a Code node flattens the response into one item per business with name, website, and phone.
+2. **Enrich and save.** A loop visits each business website, a regex Code node extracts the email and social links, and a Google Sheets node appends the finished lead.
+
+<WorkflowDiagram caption="One search call fans out into a per-website enrichment loop that appends to Google Sheets.">
+  <WorkflowStep node="Set Search Query" detail="Holds the search term, for example 'italian based event company'." />
+  <WorkflowStep node="SerpApi Google Maps" via="HTTP request" detail="Calls the google_maps engine and returns structured local_results." />
+  <WorkflowStep node="Extract Businesses" detail="Code node: one item per business with Business_Name, Website, Phone. Dedupes." />
+  <WorkflowStep node="Loop Over Websites" via="batch size 1" detail="Processes one business at a time so the run is gentle and debuggable." />
+  <WorkflowStep node="Scrape Website" via="HTTP request" detail="Fetches the raw HTML of the business site, follows redirects, continues on error." />
+  <WorkflowStep node="Extract Lead Info (Regex)" detail="Pulls email, Instagram, Facebook, and LinkedIn out of the HTML." />
+  <WorkflowOutput>Google Sheets: one row per lead with name, email, website, phone, socials</WorkflowOutput>
+</WorkflowDiagram>
+
+The important design decision is using **SerpApi instead of scraping Google directly**. Google Maps renders results client-side and rate-limits datacenter IPs, so a direct HTTP request to the Maps URL returns an app shell with no business data. SerpApi returns a clean `local_results` array every time, which is what makes the rest of the workflow reliable.
+
+## Step-by-step setup
+
+### 1. Set up the Google Sheet
+
+Create a sheet (the example names it "Lead Scraper Sheet") with a header row that matches the workflow's column mapping exactly:
+
+```text
+Business_Name    the business name from Google Maps
+Email            best contact email found on the site
+Website          the business website URL
+Phone            phone number from Google Maps (falls back to the page)
+Instagram_link   Instagram profile URL if present
+Facebook_link    Facebook page URL if present
+Linkedin_link    LinkedIn page URL if present
+```
+
+The `Save Lead to Sheet` node appends rows, so there is no match key. Each run adds new rows to the bottom.
+
+### 2. Connect credentials in n8n
+
+Add two credentials so the workflow can search and save:
+
+1. **SerpApi** (the `serpApi` credential type). Paste the API key from your [SerpApi API key page](https://serpapi.com/manage-api-key). The HTTP Request node sends it automatically as `api_key`.
+2. **Google Sheets** (OAuth2) with read and write access to the spreadsheet from Step 1.
+
+<Callout variant="warning" title="Use the API key, not an account ID">
+The SerpApi credential expects your actual API key. If you paste a project id, dashboard slug, or anything else, the call fails with `401 Invalid API key`. Confirm the value on the SerpApi API key page before running.
+</Callout>
+
+### 3. Build phase one: find businesses
+
+**Set the search query.** A `Set` node defines a single `query` string, for example `italian based event company`. Keeping it in its own node means you change the target market in one place.
+
+**Call SerpApi.** An `HTTP Request` node (`SerpApi Google Maps`) hits `https://serpapi.com/search.json` with `Predefined Credential Type` set to SerpApi and these query parameters:
+
+```text
+engine = google_maps
+q      = {{ $json.query }}
+type   = search
+hl     = en
+```
+
+**Flatten the results.** A `Code` node (`Extract Businesses`) reads `local_results` and emits one clean item per business, deduplicating on website (or name plus phone when there is no site):
+
+```js
+const data = $input.first().json;
+const results = data.local_results || data.place_results || [];
+const list = Array.isArray(results) ? results : [results];
+const out = [];
+const seen = new Set();
+for (const r of list) {
+  if (!r) continue;
+  const website = r.website || '';
+  const key = website || (r.title || '') + '|' + (r.phone || '');
+  if (seen.has(key)) continue;
+  seen.add(key);
+  out.push({ json: {
+    Business_Name: r.title || '',
+    Website: website,
+    Phone: r.phone || ''
+  } });
+}
+return out;
+```
+
+### 4. Build phase two: enrich and save
+
+**Loop one business at a time.** A `Loop Over Websites` (Split In Batches, batch size 1) feeds the enrichment branch a single business per iteration. The empty "done" branch routes to a `No Operation` node when the list is exhausted.
+
+**Fetch the site HTML.** A plain `HTTP Request` node (`Scrape Website`) requests `{{ $json.Website }}` with the response format set to text. Leave redirects on (default) so sites that bounce from `http` to `https` or apex to `www` still resolve, and set the node to continue on error so one dead site does not stop the run.
+
+<Callout variant="tip" title="Do not disable redirect following">
+Turning redirects off makes the node throw a `301` error on any site that forwards to its canonical URL, which is most of them. A simple request with default redirect handling is what reliably returns page content.
+</Callout>
+
+**Extract the lead with regex.** A `Code` node (`Extract Lead Info (Regex)`, run once per item) parses the raw HTML. It prefers role-based inboxes like `info@` or `sales@`, skips asset files and tracking domains, and picks the first real profile URL per social network while ignoring share and login links:
+
+```js
+const emailRe = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const emails = [...new Set((decoded.match(emailRe) || [])
+  .map(e => e.toLowerCase().replace(/[.,;:]+$/, '')))]
+  .filter(e => !badExt.test(e) && !/sentry|wixpress|example\./.test(e));
+const email = emails.find(e =>
+  /^(info|contact|sales|hello|hi|admin|office|enquir|support|booking)@/.test(e))
+  || emails[0] || '';
+```
+
+The node reads the business name, website, and phone back from the loop item (so the SerpApi data is always preserved) and adds the email, Instagram, Facebook, and LinkedIn it found on the page.
+
+**Append to Google Sheets.** A `Google Sheets` node (`Save Lead to Sheet`) uses the `append` operation with `defineBelow` mapping, one expression per column (`{{ $json.Business_Name }}`, `{{ $json.Email }}`, and so on). After it writes, the branch loops back to `Loop Over Websites` for the next business.
+
+### 5. Import the workflow JSON
+
+Grab the ready-made workflow with the download button above, or export your own from n8n. On the target instance, import the file, re-select the SerpApi and Google Sheets credentials from Step 2, and update the spreadsheet id and sheet name in the `Save Lead to Sheet` node to point at your own sheet.
+
+## Testing the workflow
+
+Validate each phase before pointing it at a real market:
+
+1. **Run the search.** Execute the workflow and open the `Extract Businesses` node. You should see a clean list of businesses, each with a name and (usually) a website and phone.
+2. **Check one website scrape.** Open the first iteration of `Scrape Website` and confirm it returned HTML text rather than an error. Sites that block bots will be empty, and the workflow continues past them by design.
+3. **Read the extracted lead.** Open `Extract Lead Info (Regex)` and confirm the email and social fields look right. Not every site lists an email, so blank values there are expected, not a bug.
+4. **Confirm the sheet.** Check that one row per business landed in Google Sheets with the columns aligned to the headers.
+
+The most common failure point is the SerpApi credential. If the run dies at `SerpApi Google Maps`, re-check the API key value first.
+
+## Customization options
+
+- **Change the market.** Edit the `query` in the `Set Search Query` node, for example `wedding photographers london` or `dental clinics austin`.
+- **Add a location bias.** Append a city or region to the query, or add SerpApi's `ll` and location parameters, to tighten results geographically.
+- **Scrape the contact page too.** Add a second HTTP Request that fetches `/contact` and feed both pages into the regex node for a higher email hit rate.
+- **Filter weak leads.** Insert an `IF` node before the sheet to only save rows that have an email or a phone.
+- **Schedule it.** Swap the manual trigger for a `Schedule Trigger` to refresh a list on a cadence.
+
+## Common mistakes that quietly break this
+
+- **Scraping Google Maps directly.** The Maps page is a client-side app and throttles datacenter IPs, so direct requests return no business data. Use SerpApi as the source of truth.
+- **Disabling redirect following on the website fetch.** It turns ordinary `301` redirects into hard errors. Keep default redirect handling and continue-on-error.
+- **Renaming sheet columns without updating the node.** The append mapping targets header names literally. A renamed column silently writes blanks.
+- **Pasting the wrong SerpApi value.** Only the API key authenticates. Anything else returns `401 Invalid API key`.
+- **Treating a single call as unlimited.** The Google Maps engine returns about twenty results per search. To go further you need pagination or multiple location queries, and each call spends a SerpApi credit.
+
+<InlineCta />
+
+## Conclusion
+
+You now have a lead scraper that turns a single search term into a clean, deduplicated list of businesses with emails, phones, websites, and social links, all in Google Sheets and ready for outreach. SerpApi keeps the source data reliable, the regex step keeps it cheap, and the per-website loop keeps it easy to debug. Point it at a new niche by changing one field, and the afternoon of copy-paste disappears.
