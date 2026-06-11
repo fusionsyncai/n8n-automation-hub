@@ -1,6 +1,6 @@
 import "server-only";
 import { ctaVariantForContentType } from "@/components/mdx/cta-block";
-import { siteConfig } from "@/lib/site-config";
+import { absoluteUrl, siteConfig } from "@/lib/site-config";
 import type { Post } from "@/lib/content/schema";
 
 export function markdownUrlForPost(slug: string): string {
@@ -83,7 +83,7 @@ function workflowDownloadToMarkdown(tag: string): string {
   const label = title
     ? `Download workflow JSON: ${title}`
     : "Download workflow JSON";
-  return `[${label}](${file})`;
+  return `[${label}](${absoluteUrl(file)})`;
 }
 
 function blockquote(markdown: string): string {

@@ -1,4 +1,5 @@
 import { DownloadIcon } from "lucide-react";
+import { assetPath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
 export interface WorkflowDownloadProps {
@@ -47,7 +48,7 @@ export function WorkflowDownload({
         ) : null}
       </div>
       <a
-        href={file}
+        href={assetPath(file)}
         download={downloadName}
         className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-border-strong bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-sm transition-colors hover:border-accent/40 hover:text-accent sm:self-center"
       >
