@@ -11,6 +11,8 @@ export interface WorkflowDownloadProps {
   label?: string;
   /** Short import hint below the button. */
   note?: string;
+  /** Small uppercase eyebrow above the title. Defaults to "n8n workflow". */
+  eyebrow?: string;
 }
 
 function filenameFromPath(file: string): string {
@@ -26,6 +28,7 @@ export function WorkflowDownload({
   title,
   label = "Download workflow JSON",
   note = "Import into n8n via Workflows, then Import from File.",
+  eyebrow = "n8n workflow",
 }: WorkflowDownloadProps) {
   const displayTitle = title ?? filenameFromPath(file);
   const downloadName = filenameFromPath(file);
@@ -38,7 +41,7 @@ export function WorkflowDownload({
     >
       <div className="min-w-0">
         <p className="font-mono text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-ink-faint">
-          n8n workflow
+          {eyebrow}
         </p>
         <p className="mt-1 font-semibold text-ink">{displayTitle}</p>
         {note ? (

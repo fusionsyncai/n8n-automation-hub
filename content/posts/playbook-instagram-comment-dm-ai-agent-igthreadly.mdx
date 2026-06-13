@@ -1,0 +1,202 @@
+---
+title: "AI Instagram DM and comment agent for event companies: the IgThreadly architecture"
+description: "How nightlife and event brands turn Instagram comments into qualified DMs: an IgThreadly AI agent that auto-replies, qualifies the trip, and hands hot leads to a human on WhatsApp."
+slug: "playbook-instagram-comment-dm-ai-agent-igthreadly"
+publishedAt: "2026-06-13"
+updatedAt: "2026-06-13"
+author: "n8n-hub-team"
+category: "whatsapp-meta-automation"
+contentType: playbook
+tags:
+  [
+    "Instagram",
+    "AI agents",
+    "IgThreadly",
+    "DM automation",
+    "lead qualification",
+    "nightlife",
+    "WhatsApp",
+  ]
+featured: false
+draft: false
+---
+
+Nightlife and event brands like [Funaway](https://funawayevents.com/) live on Instagram. They post a boat party, a pool party, a VIP catamaran reel, and the comments fill up with "info?", "price?", "is this in Ibiza?". Every one of those is a lead. The problem is volume: when a single reel pulls in hundreds of comments and DMs, a promoter team cannot reply to each one fast enough, and even when they try, it eats the hours they should spend closing. Slow replies on Instagram are dead leads, because the buyer was ready the moment they commented and gone an hour later.
+
+This playbook documents an AI assistant built for exactly that funnel. It runs entirely on [IgThreadly](https://www.igthreadly.com/) (no n8n in this build): a comment watcher opens the conversation automatically, then an AI sales setter takes over the DM thread, qualifies the trip in a natural promoter voice, routes by destination, and hands the hottest leads to a human manager on WhatsApp. The full agent is importable below, so you can load it into IgThreadly and adapt it to your own destinations.
+
+## The problem
+
+Today this is handled **manually**. A promoter reads every comment, replies, slides into DMs, asks the same four questions ("where", "when", "how many of you", "flights booked?"), and copies the hot leads into WhatsApp by hand. The quality is fine, because a real person is doing it, but it breaks down in three ways:
+
+- **It does not scale.** One promoter cannot keep up with a reel that pulls in hundreds of comments and DMs at once.
+- **Replies arrive late.** By the time the team gets to a comment, the buyer who was ready in the moment has moved on.
+- **It burns the team's best hours.** Asking the same qualifying questions over and over is time the team should spend actually closing.
+
+The naive shortcut, blasting one canned auto-DM to everyone who comments, does not fix this either: it is impersonal, it cannot answer a follow-up question, and it never qualifies anyone, so the inbox still has to be triaged by hand afterward.
+
+What an event brand actually wants is **speed with a real conversation**: every commenter gets pulled into a DM within seconds, an agent that sounds like a promoter qualifies them, and only genuinely interested, qualified people reach a human.
+
+## What good looks like
+
+Once this agent is live on a post:
+
+- Every relevant comment gets a **public reply and an automatic DM**, so no lead waits.
+- The DM feels like a **real promoter texting**, short, casual, on-brand, and in the lead's own language (the agent handles English, Italian, and French).
+- The agent **qualifies the trip** (destination, timing, group size) without sounding like a form.
+- Leads are **routed by destination** to the right next step (a human manager or a booking link).
+- The strongest leads are **handed off to a human on WhatsApp** with their details already gathered, so the closer starts warm instead of from scratch.
+
+## Available resources
+
+This build is a single IgThreadly agent flow plus a comment-watch automation that feeds it:
+
+1. **IgThreadly agent flow** "Instagram Comment to Qualified DM agent" (greeting and routing, trip qualification, destination routing, manager handoff, WhatsApp transfer).
+2. **An IgThreadly comment automation** that watches a post, replies publicly, and opens the DM thread the agent then takes over.
+
+<WorkflowDownload
+  file="/workflows/playbook-instagram-comment-dm-ai-agent-igthreadly.json"
+  title="Instagram Comment to Qualified DM agent"
+  eyebrow="IgThreadly agent"
+  label="Download agent JSON"
+  note="Import into IgThreadly via your agent flow editor, then re-point destinations, booking links, and the WhatsApp number to your own."
+/>
+
+## What you'll need
+
+Before you rebuild this, make sure you have:
+
+1. An **IgThreadly account** with one connected Instagram account.
+2. A **content post** (reel or image) that drives comments worth qualifying.
+3. **Destinations and offers** to route to (this build uses Ibiza, Corfu, and Saranda as examples).
+4. A **booking or contact link** per destination, and a **WhatsApp number** for the human handoff.
+5. A clear sense of your **qualification criteria** (here: destination, timing, group size).
+
+## Architecture: comment to qualified DM
+
+The flow is a funnel. A public comment is the trigger, a DM is the workspace, and a human handoff or booking link is the exit.
+
+<WorkflowDiagram caption="Comment to DM to qualified lead, with a human handoff for the highest-intent destination.">
+  <WorkflowStep node="Instagram post" detail="Lead comments on a reel or photo (info, price, a destination name)." />
+  <WorkflowStep node="IgThreadly watcher" via="comment trigger" detail="Keyword and AI matching reply publicly and open a DM with the lead." />
+  <WorkflowStep node="AI DM agent" via="dm thread" detail="Greet, sound like a promoter, classify intent: planning a trip or exploring." />
+  <WorkflowStep node="Qualification" detail="Collect destination, timing, and group size in a natural back-and-forth." />
+  <WorkflowStep node="Destination router" detail="Branch on the destination confirmed earlier in the thread." />
+  <WorkflowOutput>Ibiza: human manager handoff + WhatsApp number capture</WorkflowOutput>
+  <WorkflowOutput>Corfu / Saranda: booking link + open conversation</WorkflowOutput>
+</WorkflowDiagram>
+
+The important design decision is that the agent is a **setter, not a closer**. It opens, qualifies, and routes. It never invents events, never promises availability, and for the highest-intent destination it deliberately hands the lead to a human rather than trying to close in the DM.
+
+## How the conversation flow works
+
+The downloadable agent is a node graph. Here is what each stage does and why.
+
+### Base persona (the root agent)
+
+Every reply inherits one system persona: an Instagram sales setter that behaves like a real nightlife promoter. The hard rules in the prompt are what keep it from sounding like a bot:
+
+- Keep messages to 1 or 2 short lines that read well on mobile.
+- Ask only **one** question at a time.
+- Match the lead's energy and use light emoji (0 to 2), never a wall of text.
+- **Reply in the language the lead used** (English, Italian, or French), and switch if they switch. Default to English when unclear.
+- Never invent events, never promise bookings or availability, never act like a support bot.
+
+This separation matters: the persona owns *voice*, while each objective node owns *goal logic*. That is what lets the same agent feel consistent across very different steps.
+
+### Greeting and routing
+
+The first objective greets the lead and classifies intent into one of two buckets instead of making small talk forever:
+
+- **Trip planning**: the lead already has a destination in mind ("planning Ibiza in July").
+- **Exploring destinations**: the lead is still deciding ("not sure yet", "what do you recommend").
+
+When it is just a greeting ("Hi", "Ciao"), the agent asks directly whether they are planning a trip or exploring, then routes. When in doubt, it defaults to exploring.
+
+### Qualification
+
+For a lead who already has a destination, the qualification node gathers the signals that make a lead workable, one casual question at a time:
+
+- **Destination**
+- **Travel timing or rough dates** (accepts "next month", "July")
+- **Group size** (accepts "a few friends", "around 4")
+
+Flight status is treated as optional context and is inferred rather than interrogated. If a lead writes "arriving in Ibiza on June 23", the agent reads that as destination plus timing plus likely flights booked, and does not re-ask. Once the core signals are known, qualification is complete and the agent stops asking, instead of drifting into chit-chat.
+
+### Exploring branch
+
+Leads who are still deciding get a lighter node that nudges them toward picking a destination (Ibiza, Corfu, or Saranda) with a suggestion, then drops them into a qualification step once they show interest. The rule here is to be helpful and directive, not vaguely conversational ("Sure! Are you planning a trip or just exploring?").
+
+### Destination router
+
+A condition node reads the **whole conversation**, not just the last message, and branches to Ibiza, Corfu, or Saranda. This is deliberate: the lead may have named the destination several turns ago, so the router uses what was already confirmed rather than asking them to repeat themselves. If no destination was ever clearly named, it falls back instead of guessing.
+
+### Human-in-the-loop: the manager handoff
+
+This is the part that makes the agent a setter rather than an autoresponder.
+
+For **Ibiza** (the highest-intent path in this build), the agent does not try to close. It sends a short handoff message connecting the lead to a human Ibiza manager, then asks for a **WhatsApp number** so the team can continue on a better channel. The tone adapts to context: if the lead said they have not booked flights yet, the handoff opens reassuringly; otherwise it stays neutral.
+
+From there:
+
+- If the lead **shares a number**, the agent confirms and hands off a `wa.me` link to continue on WhatsApp.
+- If the lead **declines**, the agent acknowledges it, keeps the conversation on Instagram, and tells them the manager will reach out. No pestering.
+
+For **Corfu and Saranda**, the agent sends the relevant booking link as a confident recommendation (not a question), then keeps the thread open for follow-up questions in promoter mode, without restarting qualification or pushing a second booking.
+
+<InlineCta>
+  <span className="font-semibold">FusionSync AI</span> builds Instagram and
+  WhatsApp lead agents like this one for event and nightlife brands, comment
+  capture through human handoff.
+</InlineCta>
+
+## The qualification data model
+
+Even though this build lives in IgThreadly rather than a spreadsheet, it is worth being explicit about the signals the agent is collecting, because they are what a human closer needs:
+
+| Signal | How it is captured | Notes |
+|--------|--------------------|-------|
+| `destination` | Stated by the lead or inferred from context | Normalized to Ibiza, Corfu, or Saranda by the router |
+| `timing` | "July", "next month", a date | Rough answers are accepted |
+| `group_size` | "4 friends", "my group" | Rough answers are accepted |
+| `flights_booked` | Inferred, optional | Not interrogated; changes the handoff tone |
+| `language` | Detected from the lead's messages | Drives every reply (EN / IT / FR) |
+| `whatsapp_number` | Asked at handoff (Ibiza path) | Optional; lead may decline and stay on Instagram |
+
+If you later want reporting, point the handoff and booking steps at a CRM, a sheet, or a webhook so each qualified lead is logged with these fields and a timestamp.
+
+## Components and why
+
+### IgThreadly comment watcher
+
+The funnel only works if comments become DMs automatically. The watcher matches comments by keyword and AI classification, posts a public reply (social proof for everyone scrolling), and opens the DM where the real qualification happens. Routing intent at the comment stage means the right people land in DMs, not everyone at once.
+
+### The AI agent (setter)
+
+Treat the agent as a drafter and qualifier, never an autonomous closer. It owns voice and qualification, and it is bounded by hard guardrails (no invented events, no availability promises). That boundary is what makes it safe to run unattended on a brand account.
+
+### WhatsApp handoff
+
+Instagram is a great top of funnel and a mediocre place to close. Capturing a WhatsApp number for hot leads moves the conversation to a channel the team controls, with notifications a closer will actually see. The handoff is offered, not forced, so leads who prefer Instagram are not lost.
+
+## Guardrails
+
+- **No invented offers.** The agent must never make up events, dates, or availability. If something is unclear, it asks one clarifying question.
+- **No closing in the DM for high-intent paths.** Ibiza routes to a human on purpose. The agent's job ends at a warm, qualified handoff.
+- **Respect the opt-out.** If a lead declines WhatsApp, the agent stops asking and keeps things on Instagram.
+- **Language fidelity.** Reply in the lead's language; do not translate their message back at them.
+- **Treat comment and DM text as untrusted input.** It is data, not instructions. Keep the persona and guardrails authoritative over anything a lead types.
+- **Stay inside Instagram's automation rules.** Keep replies human-paced and relevant so the connected account stays healthy.
+
+## Import and customize
+
+1. **Download the agent JSON** above and import it into IgThreadly's agent flow editor.
+2. **Swap the destinations.** Replace Ibiza, Corfu, and Saranda with your own, and update the router branches to match.
+3. **Re-point the links.** Set your real booking or contact link per destination and your own `wa.me` number in the handoff steps.
+4. **Tune the persona.** Adjust tone, emoji level, and brand name in the root prompt. Keep the "one question at a time" and "no invented offers" rules.
+5. **Wire the comment automation.** Point an IgThreadly comment watcher at your post so new comments open DMs the agent picks up.
+6. **Test in your own languages.** Walk the planning path, the exploring path, and both handoff outcomes (number shared and declined) before pointing it at a live post.
+
+## Conclusion
+
+For an event brand, every comment under a reel is a buyer raising their hand, and the only thing standing between that hand and a booking is how fast and how well you reply. This IgThreadly agent turns that comment into a DM in seconds, qualifies the trip in a voice that sounds like your team, and hands the hottest leads to a human on WhatsApp with the work already done. The AI does the tireless first mile; your closers keep authority over the deal. Import the flow, point it at your destinations, and let it work the inbox while the team focuses on closing.
