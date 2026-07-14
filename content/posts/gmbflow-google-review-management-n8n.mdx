@@ -1,0 +1,251 @@
+---
+title: "GMBFlow: automate Google review requests with n8n, Gmail, and a Next.js dashboard"
+description: "Install three n8n workflows plus the GMBFlow dashboard: queue review emails, keep 1-3 star feedback private, and redirect happy customers to Google Business."
+slug: "gmbflow-google-review-management-n8n"
+publishedAt: "2026-07-14"
+author: "n8n-hub-team"
+category: "business-process-automation"
+contentType: implementation
+tags:
+  [
+    "n8n",
+    "Google reviews",
+    "GMBFlow",
+    "Gmail",
+    "reputation management",
+    "Next.js",
+    "data tables",
+  ]
+featured: true
+draft: false
+---
+
+Asking for Google reviews is easy to postpone and painful to do well. Blast everyone the same link and you train customers to ignore you; let unhappy buyers hit your public listing and one bad afternoon becomes a permanent scar. The naive fix, a shared Google review URL in a footer, skips the rating filter entirely and gives you no queue, no duplicate guard, and no record of who already responded.
+
+This guide builds **GMBFlow**, a Next.js dashboard backed by three n8n workflows. You onboard businesses, tag leads by service, queue branded review emails, and collect ratings on a dedicated review page. Four and five stars redirect to Google Business; one to three stars stay internal. Already-reviewed leads cannot be re-queued or re-submitted. The important design decision is the **rating split on the review page itself**, before anything public happens.
+
+## Available resources
+
+This build uses four assets you will set up below:
+
+1. **n8n workflow** "GMB 00: Bootstrap Data Tables" (creates five data tables idempotently).
+2. **n8n workflow** "GMB 02: Send Review Email" (Gmail sub-workflow called when a lead is queued).
+3. **n8n workflow** "GMB 01: API Gateway" (all app CRUD, review submission, and email job dispatch).
+4. **GMBFlow app** (Next.js dashboard at `/b/{slug}` plus branded `/review/{token}` pages).
+
+<WorkflowDownload
+  file="/workflows/gmbflow-00-bootstrap-tables.json"
+  title="GMB 00: Bootstrap Data Tables"
+  note="Import first. Creates gmb_businesses, gmb_services, gmb_leads, gmb_reviews, and gmb_activity_logs."
+/>
+
+<WorkflowDownload
+  file="/workflows/gmbflow-02-send-review-email.json"
+  title="GMB 02: Send Review Email"
+  note="Import second. Connect Gmail OAuth2 on the Send Gmail node, then activate and copy the workflow ID."
+/>
+
+<WorkflowDownload
+  file="/workflows/gmbflow-01-api-gateway.json"
+  title="GMB 01: API Gateway (source)"
+  note="Template only. Clone GMBFlow and run build-workflows.ts to embed your table IDs before importing."
+/>
+
+## What you'll need
+
+Before you begin, make sure you have:
+
+1. An **n8n instance** (cloud or self-hosted) with **Data Tables** enabled and a public HTTPS webhook URL.
+2. A **Gmail account** with a Google Cloud OAuth app authorized for `gmail.send`.
+3. An **n8n API key** so the API Gateway Code node can read and write Data Tables via the REST API.
+4. A shared **GMB API key** (sent as `X-API-Key`) that both the Next.js app and n8n workflows agree on.
+5. The **GMBFlow** Next.js app cloned locally (`bun install`, then `bun dev` on port 3000).
+6. A **Google Business Profile place ID** for each business you onboard (used to build the public review redirect URL).
+
+## Overview of the automation
+
+The automation runs in three phases. The Next.js dashboard is the UI; n8n is the backend.
+
+1. **Bootstrap storage.** A one-time workflow creates five n8n Data Tables that hold businesses, services, leads, reviews, and activity logs.
+2. **Queue and send.** The dashboard queues leads via the API Gateway. The gateway marks them `queued`, then calls the email sub-workflow, which sends a Gmail message with a branded `/review/{token}` link.
+3. **Collect and filter.** The customer submits a 1 to 5 star rating on the review page. Four and five stars unlock a redirect to Google Business; one to three stars are saved internally only.
+
+<WorkflowDiagram caption="Dashboard talks to one webhook; email and review logic stay in n8n Data Tables.">
+  <WorkflowStep
+    node="GMBFlow dashboard"
+    via="POST /gmb-api"
+    detail="Onboard businesses, import leads, queue review emails, view stats."
+  />
+  <WorkflowStep
+    node="GMB 01: API Gateway"
+    detail="CRUD on Data Tables, duplicate guards, review submit, email job dispatch."
+  />
+  <WorkflowStep
+    node="GMB 02: Send Review Email"
+    via="sub-workflow"
+    detail="Rate-limited Gmail send with success/fail callback to the gateway."
+  />
+  <WorkflowStep
+    node="Review page"
+    via="/review/{token}"
+    detail="Branded rating form. 4-5 stars redirect to Google; 1-3 stars stay private."
+  />
+  <WorkflowOutput>Five Data Tables as system of record</WorkflowOutput>
+  <WorkflowOutput>Activity log for every status change and email event</WorkflowOutput>
+</WorkflowDiagram>
+
+Splitting the API Gateway from the email sub-workflow keeps the webhook response fast. The gateway acknowledges the queue request immediately, then fires Gmail sends asynchronously with a five-second stagger between batch items so you do not trip rate limits.
+
+## Step-by-step setup
+
+### 1. Set up the Data Tables
+
+GMBFlow stores everything in five n8n Data Tables. Column definitions live in the GMBFlow repo at `n8n/tables-schema.json`.
+
+| Table | Purpose |
+| ----- | ------- |
+| `gmb_businesses` | Workspace identity: slug, name, Google place ID, logo, owner email |
+| `gmb_services` | Per-service email templates (`email_subject`, `email_body` with `{{name}}`, `{{service}}`, `{{review_link}}`) |
+| `gmb_leads` | Contacts with status lifecycle: `pending` → `queued` → `sent` → `opened` → `reviewed` |
+| `gmb_reviews` | Submitted ratings, comments, and whether the lead was redirected to Google |
+| `gmb_activity_logs` | Audit trail: `lead.created`, `email.sent`, `review.submitted`, and more |
+
+**Bootstrap via webhook (recommended).** Import `gmbflow-00-bootstrap-tables.json`, activate it, then trigger:
+
+```bash
+curl -X POST https://your-n8n.example.com/webhook/gmb-bootstrap-tables
+```
+
+The workflow is idempotent: existing tables are left untouched. After bootstrap, copy each table ID from n8n into `n8n/gmb-config.json` in the GMBFlow repo (start from `gmb-config.example.json`).
+
+<Callout variant="tip" title="n8n reserves a built-in row id">
+  Custom UUIDs are stored in a `record_id` column. The API handler maps `record_id` back to `id` for the dashboard.
+</Callout>
+
+### 2. Connect credentials in n8n
+
+Add these before importing the remaining workflows:
+
+1. **Gmail OAuth2** in Google Cloud Console (enable Gmail API, add redirect URI `https://your-n8n.example.com/rest/oauth2-credential/callback`, create OAuth client, sign in inside n8n).
+2. **n8n API key** (Settings → API) for Data Table reads and writes from the Code node.
+3. **n8n Variables** (or `gmb-config.json` for the build script):
+   - `GMB_WF_SEND_EMAIL_ID`: set after WF02 is active
+   - `GMB_API_KEY`: shared secret matching the Next.js app
+   - `N8N_BASE_URL`: your n8n instance URL
+
+### 3. Build phase one: the email sub-workflow
+
+**Import WF02.** Open `gmbflow-02-send-review-email.json` in n8n (Workflows → Import from file).
+
+**Connect Gmail.** Open the **Send Gmail** node, select your Gmail OAuth2 credential, and confirm **Email Type** is `html` (static value, not an expression).
+
+**Activate and copy the ID.** Activate the workflow, then copy its workflow ID into `GMB_WF_SEND_EMAIL_ID` (n8n Variable or `gmb-config.json`).
+
+The sub-workflow accepts `{ to, subject, body, lead_id, business_id }` from the gateway, waits on a staggered delay, sends via Gmail, then POSTs a `lead.email_result` callback so the gateway can flip the lead to `sent` or `failed`.
+
+### 4. Build phase two: the API Gateway
+
+The source JSON is a template. The **API Handler** Code node contains the full CRUD logic but must be built with your table IDs embedded.
+
+**From the GMBFlow repo:**
+
+```bash
+bun n8n/scripts/build-workflows.ts
+```
+
+This reads `n8n/gmb-config.json` and writes `n8n/workflows/01-api-gateway.built.json` with the handler code and CONFIG block inlined.
+
+**Import the built file.** Import `01-api-gateway.built.json` (not the source template), activate it, and note the webhook URL:
+
+```text
+https://your-n8n.example.com/webhook/gmb-api
+```
+
+Every dashboard request is a POST with JSON `{ action, ...params }` and header `X-API-Key: your-gmb-api-key`.
+
+Key actions the gateway handles:
+
+| Action | What it does |
+| ------ | ------------ |
+| `business.create` | Onboard a workspace with default service templates |
+| `lead.import` | Bulk CSV import with duplicate skip by email |
+| `lead.update_status` | Queue leads (`queued`), with no-resend guard for `sent`/`opened`/`reviewed` |
+| `review.submit` | Save rating; return `gmb_url` only for 4-5 stars |
+| `stats.get` | Dashboard counts and average rating |
+
+### 5. Configure the GMBFlow Next.js app
+
+Clone [GMBFlow](https://github.com/PiyushBuildsAI/GMBFlow.git), copy `.env.example` to `.env.local`, and set:
+
+```bash
+N8N_WEBHOOK_URL=https://your-n8n.example.com/webhook/gmb-api
+N8N_API_KEY=your-gmb-api-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Start the app:
+
+```bash
+bun dev
+```
+
+Open `http://localhost:3000`, create a workspace, and land on `/b/{slug}`.
+
+**Onboarding flow:**
+
+1. `/onboard`: three-step wizard (business name, Google place ID, owner email).
+2. `/b/{slug}/leads`: add leads manually or import a CSV (`name` + `email` required; `service` and `notes` optional).
+3. Assign a service to unassigned leads, then click **Queue** to trigger review emails.
+
+**Review page.** Each queued lead gets a unique token. The email links to `/review/{token}`. On submit:
+
+- **4-5 stars:** rating saved, customer redirected to `https://search.google.com/local/writereview?placeid=...`
+- **1-3 stars:** rating and comment saved internally; no Google redirect
+
+### 6. Import the workflow JSON
+
+Use the download buttons above in this order:
+
+1. **Bootstrap** (`gmbflow-00-bootstrap-tables.json`): activate, run the webhook, copy table IDs.
+2. **Send Review Email** (`gmbflow-02-send-review-email.json`): connect Gmail, activate, set `GMB_WF_SEND_EMAIL_ID`.
+3. **API Gateway**: run `build-workflows.ts` in the GMBFlow repo, import the **built** JSON, activate.
+
+Re-select credentials after every import. Update webhook URLs and API keys to match your instance, not the placeholder values in the shipped files.
+
+## Testing the workflow
+
+Validate each layer before queuing real customers:
+
+1. **Bootstrap idempotency.** Run the bootstrap webhook twice. The second run should return existing tables without error.
+2. **Health check.** POST to `/webhook/gmb-api` with `{ "action": "health" }` and your `X-API-Key` header. Expect `{ "ok": true, "storage": "data-tables" }`.
+3. **Create a business.** Use the GMBFlow onboard wizard or POST `{ "action": "business.create", "slug": "test-co", "name": "Test Co", "place_id": "ChIJ..." }`. Confirm three default services appear.
+4. **Queue one lead.** Add a lead with a service assigned, queue it, and confirm the Gmail arrives with a working `/review/{token}` link.
+5. **Submit a low rating.** Pick 2 stars on the review page. Confirm the rating appears in the dashboard but no Google redirect is offered.
+6. **Submit a high rating.** Pick 5 stars. Confirm redirect to Google Business is offered and `redirected_to_gmb` is logged.
+7. **Duplicate guard.** Try queuing the same lead again or re-submitting a review. Both should be blocked.
+
+If emails fail with "Forbidden - perhaps check your credentials?", reconnect Gmail OAuth2 in n8n and confirm the Google Console redirect URI matches exactly.
+
+## Customization options
+
+- **Email templates per service.** Edit subjects and bodies in `/b/{slug}/services`. Use `{{name}}`, `{{service}}`, and `{{review_link}}` placeholders.
+- **Stagger rate.** Change `SECONDS_BETWEEN` in the API Gateway **Split Email Jobs** Code node to tune Gmail batch spacing.
+- **Swap the sender.** Any n8n email node (SMTP, SendGrid) can replace Gmail if you adjust WF02 accordingly.
+- **Add SMS or WhatsApp.** Replace the email sub-workflow with a messaging channel; the gateway `_emailJobs` dispatch pattern stays the same.
+- **Multi-workspace.** Each business is isolated by `business_id`. One n8n instance can serve many clients from the same three workflows.
+
+## Common mistakes that quietly break this
+
+- **Importing the API Gateway source without building.** The Code node is a placeholder until `build-workflows.ts` embeds your table IDs and API keys.
+- **Wrong import order.** WF02 must be active before WF01, because the gateway calls the email sub-workflow by ID.
+- **Skipping the service assignment.** Leads without a `service_id` are skipped at queue time. Assign a service before queuing.
+- **Gmail not connected on WF2.** Queued emails fail silently until you select a real OAuth credential on the Send Gmail node.
+- **Mismatched API keys.** The `X-API-Key` in the Next.js app, WF02 callback nodes, and the gateway CONFIG must all match.
+- **Re-queuing reviewed leads.** The gateway blocks re-send for `sent`, `opened`, and `reviewed` statuses. Delete and re-create the lead if you truly need a second ask.
+- **Treating low ratings as public.** The Google redirect only unlocks at 4+ stars on the review page. Never link customers directly to your Google review URL without the rating gate.
+
+<InlineCta />
+
+## Conclusion
+
+You now have a complete Google review management stack: a branded dashboard for onboarding and lead management, three n8n workflows handling storage and email, and a review page that protects your public rating before unhappy customers ever reach Google. Happy customers get a one-tap path to your listing; unhappy ones give you private feedback you can act on. Duplicate guards, activity logs, and per-service email templates mean the system stays trustworthy as you scale past the first dozen leads.

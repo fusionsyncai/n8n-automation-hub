@@ -5,14 +5,15 @@ const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").re
   "",
 );
 
+// Production is reverse-proxied at `www.fusionsync.ai/workflow`. Local dev
+// serves from `/` so `localhost:3000` works without a path prefix. Override with
+// NEXT_PUBLIC_BASE_PATH when needed.
+const basePath =
+  process.env.NEXT_PUBLIC_BASE_PATH ??
+  (process.env.NODE_ENV === "development" ? "" : "/workflow");
+
 const nextConfig: NextConfig = {
-  // The hub is served as a subfolder of the main site at
-  // `www.fusionsync.ai/workflow` via a reverse proxy in the fusionsync-website
-  // middleware. basePath makes Next emit every page route, `_next` asset, and
-  // `next/link` href under `/workflow`, so the proxied HTML resolves correctly
-  // under the apex domain instead of 404ing at the root. The website middleware
-  // forwards the `/workflow` prefix unchanged, so paths line up 1:1.
-  basePath: "/workflow",
+  basePath,
   // Posts may reference cover images by relative path under /public/. That's
   // already covered by next/image without configuration. If we ever embed
   // remote images (e.g. from a CDN), add their hostnames here.

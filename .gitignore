@@ -17,8 +17,6 @@ build/
 dist/
 
 # Environment files
-.env
-.env.*
 !.env.example
 
 # TypeScript incremental build cache
@@ -39,7 +37,6 @@ yarn-error.log*
 # Editor & OS
 .DS_Store
 .idea/
-.vscode/
 *.swp
 
 # Deploy platforms
@@ -50,3 +47,4 @@ yarn-error.log*
 .turbo
 
 .cursor/mcp.json
+config.bat
